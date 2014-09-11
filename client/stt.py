@@ -1,8 +1,9 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import sys
 import traceback
 import json
-import requests
+import urllib2
 
 """
 The default Speech-to-Text implementation which relies on PocketSphinx.
@@ -11,9 +12,9 @@ The default Speech-to-Text implementation which relies on PocketSphinx.
 
 class PocketSphinxSTT(object):
 
-    def __init__(self, lmd="languagemodel.lm", dictd="dictionary.dic",
+    def __init__(self, logger, lmd="languagemodel.lm", dictd="dictionary.dic",
                  lmd_persona="languagemodel_persona.lm", dictd_persona="dictionary_persona.dic",
-                 lmd_music=None, dictd_music=None, **kwargs):
+                 lmd_music=None, dictd_music=None):
         """
         Initiates the pocketsphinx instance.
 
@@ -24,7 +25,7 @@ class PocketSphinxSTT(object):
         lmd_persona -- filename of the 'Persona' language model (containing, e.g., 'Jasper')
         dictd_persona -- filename of the 'Persona' dictionary (.dic)
         """
-
+        self.logger = logger
         # quirky bug where first import doesn't work
         try:
             import pocketsphinx as ps
@@ -62,9 +63,10 @@ class PocketSphinxSTT(object):
             self.speechRec.decode_raw(wavFile)
             result = self.speechRec.get_hyp()
 
-        print "==================="
-        print "JASPER: " + result[0]
-        print "==================="
+        self.logger.info("===================")
+        self.logger.info("YOU: " + result[0]  )
+        self.logger.info("===================")
+        
 
         return result[0]
 
@@ -97,13 +99,13 @@ class GoogleSTT(object):
 
     RATE = 16000
 
-    def __init__(self, api_key, **kwargs):
+    def __init__(self, logger, api_key):
         """
         Arguments:
         api_key - the public api key which allows access to Google APIs
         """
+        self.logger = logger
         self.api_key = api_key
-        self.http = requests.Session()
 
     def transcribe(self, audio_file_path, PERSONA_ONLY=False, MUSIC=False):
         """
@@ -114,27 +116,37 @@ class GoogleSTT(object):
         audio_file_path -- the path to the .wav file to be transcribed
         """
         url = "https://www.google.com/speech-api/v2/recognize?output=json&client=chromium&key=%s&lang=%s&maxresults=6&pfilter=2" % (
-            self.api_key, "en-us")
-
+            self.api_key, "pl-PL")
+        
         wav = open(audio_file_path, 'rb')
         data = wav.read()
         wav.close()
 
         try:
-            headers = {'Content-type': 'audio/l16; rate=%s' % GoogleSTT.RATE}
-            response = self.http.post(url, data=data, headers=headers)
-            response.encoding = 'utf-8'
-            response_read = response.text
-            decoded = json.loads(response_read.split("\n")[1])
-
-            text = decoded['result'][0]['alternative'][0]['transcript']
+            req = urllib2.Request(
+                url,
+                data=data,
+                headers={
+                    'Content-type': 'audio/l16; rate=%s' % GoogleSTT.RATE})
+            self.logger.debug("google speech api url: %s" % url)
+            response_url = urllib2.urlopen(req)
+            response_read = response_url.read()
+            self.logger.debug("raw response: %s" % repr(response_read))
+            response_read = response_read.decode('utf-8')
+            if response_read = '{"result":[]}\n':
+              text = None
+            else:
+              decoded = json.loads(response_read.split("\n")[1])
+              self.logger.debug("decoded response: %s" % repr(response_read.encode('utf-8')))
+              text = decoded['result'][0]['alternative'][0]['transcript']
             if text:
-                print "==================="
-                print "JASPER: " + text
-                print "==================="
+                self.logger.info("<<<<<<<<<<<<<<<<<<<")
+                self.logger.info("YOU: " + text.encode('utf-8')  )
+                self.logger.info("<<<<<<<<<<<<<<<<<<<")
             return text
         except Exception:
             traceback.print_exc()
+            self.logger.error("Failed to transcribe data: %s" % audio_file_path, exc_info=True)
 
 """
 Returns a Speech-To-Text engine.
@@ -148,11 +160,12 @@ kwargs - keyword arguments passed to the constructor of the STT engine
 """
 
 
-def newSTTEngine(engine_type, **kwargs):
+def newSTTEngine(engine_type, logger, api_key):
     t = engine_type.lower()
     if t == "sphinx":
-        return PocketSphinxSTT(**kwargs)
+        return PocketSphinxSTT(logger)
     elif t == "google":
-        return GoogleSTT(**kwargs)
+        return GoogleSTT(logger, api_key)
     else:
+        logger.critical("Unsupported STT engine type: " + engine_type)
         raise ValueError("Unsupported STT engine type: " + engine_type)

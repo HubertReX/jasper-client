@@ -1,9 +1,10 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import Queue
 from modules import Gmail
 from apscheduler.scheduler import Scheduler
-import logging
-logging.basicConfig()
+#import logging
+#logging.basicConfig()
 
 
 class Notifier(object):
@@ -17,7 +18,8 @@ class Notifier(object):
         def run(self):
             self.timestamp = self.gather(self.timestamp)
 
-    def __init__(self, profile):
+    def __init__(self, profile, logger):
+        self.logger = logger
         self.q = Queue.Queue()
         self.profile = profile
         self.notifiers = [
@@ -38,7 +40,7 @@ class Notifier(object):
             lastDate = Gmail.getMostRecentDate(emails)
 
         def styleEmail(e):
-            return "New email from %s." % Gmail.getSender(e)
+            return "Nowy email od %s." % Gmail.getSender(e)
 
         for e in emails:
             self.q.put(styleEmail(e))

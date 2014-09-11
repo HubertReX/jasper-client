@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from notifier import Notifier
 from musicmode import *
 from brain import Brain
@@ -7,12 +8,13 @@ from mpd import MPDClient
 
 class Conversation(object):
 
-    def __init__(self, persona, mic, profile):
+    def __init__(self, persona, mic, profile, logger):
         self.persona = persona
         self.mic = mic
         self.profile = profile
-        self.brain = Brain(mic, profile)
-        self.notifier = Notifier(profile)
+        self.brain = Brain(mic, profile, logger)
+        self.notifier = Notifier(profile, logger)
+        self.logger = logger
 
     def delegateInput(self, text):
         """A wrapper for querying brain."""
@@ -26,12 +28,14 @@ class Conversation(object):
                 client.idletimeout = None
                 client.connect("localhost", 6600)
             except:
+                self.logger.warning("Failed to init MPDClient")
                 self.mic.say(
-                    "I'm sorry. It seems that Spotify is not enabled. Please read the documentation to learn how to configure Spotify.")
+                    "Wybacz, ale najwyraźniej usługa Spotify nie działa")
                 return
-
-            self.mic.say("Please give me a moment, I'm loading your Spotify playlists.")
-            music_mode = MusicMode(self.persona, self.mic)
+            
+            self.logger.info("waiting for Spotify playlist")
+            self.mic.say("Poczekaj chwilę, wczytuję listę utworów Spotify")
+            music_mode = MusicMode(self.persona, self.mic, self.logger)
             music_mode.handleForever()
             return
 
@@ -39,12 +43,13 @@ class Conversation(object):
 
     def handleForever(self):
         """Delegates user input to the handling function when activated."""
-        while True:
+        repeat = True
+        while repeat:
 
             # Print notifications until empty
             notifications = self.notifier.getAllNotifications()
             for notif in notifications:
-                print notif
+                self.logger.info("Got new notification: %s" % notif.encode('utf-8') )
 
             try:
                 threshold, transcribed = self.mic.passiveListen(self.persona)
@@ -53,7 +58,13 @@ class Conversation(object):
 
             if threshold:
                 input = self.mic.activeListen(threshold)
+                self.logger.debug("got threshold %s and input %s" % (threshold, repr(input) ) )
                 if input:
-                    self.delegateInput(input)
+                    if any(x in input.upper() for x in ["KONIEC"]):
+                      repeat = False
+                      self.logger.info("Quiting after voice request")
+                      self.mic.say("Kończę pracę. Do usłyszenia.")
+                    else:
+                      self.delegateInput(input)
                 else:
-                    self.mic.say("Pardon?")
+                    self.mic.say("Powtórz poroszę.")

@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import random
 import re
 
@@ -30,7 +31,7 @@ def getRandomJoke(filename="../static/text/JOKES.txt"):
     return joke
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Responds to user-input, typically speech text, by telling a joke.
 

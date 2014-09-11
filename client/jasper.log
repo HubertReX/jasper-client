@@ -1,0 +1,7 @@
+2014-09-06 16:09:54,872 ERROR Failed to execute module
+Traceback (most recent call last):
+  File "/home/pi/jasper/client/brain.py", line 78, in query
+    module.handle(text, self.mic, self.profile)
+  File "/home/pi/jasper/client/modules/Birthday.py", line 19, in handle
+    oauth_access_token = profile['keys']["FB_TOKEN"]
+KeyError: 'keys'

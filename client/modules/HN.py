@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import urllib2
 import re
 import random
@@ -42,7 +43,7 @@ def getTopStories(maxResults=None):
     return matches
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Responds to user-input, typically speech text, with a sample of
         Hacker News's top headlines, sending them to the user over email

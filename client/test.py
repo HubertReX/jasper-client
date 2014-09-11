@@ -1,7 +1,6 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
-import sys
 
 if os.environ.get('JASPER_HOME') is None:
     os.environ['JASPER_HOME'] = '/home/pi'
@@ -10,16 +9,10 @@ import unittest
 import argparse
 from mock import patch
 from urllib2 import URLError, urlopen
+import yaml
 import test_mic
 import g2p
 import brain
-
-DEFAULT_PROFILE = {
-    'prefers_email': False,
-    'location': '08544',
-    'timezone': 'US/Eastern',
-    'phone_number': '012344321'
-}
 
 
 def activeInternet():
@@ -74,7 +67,7 @@ class TestG2P(unittest.TestCase):
 class TestModules(unittest.TestCase):
 
     def setUp(self):
-        self.profile = DEFAULT_PROFILE
+        self.profile = yaml.safe_load(open("profile.yml", "r"))
         self.send = False
 
     def runConversation(self, query, inputs, module):
@@ -171,7 +164,7 @@ class TestBrain(unittest.TestCase):
     @staticmethod
     def _emptyBrain():
         mic = test_mic.Mic([])
-        profile = DEFAULT_PROFILE
+        profile = yaml.safe_load(open("profile.yml", "r"))
         return brain.Brain(mic, profile)
 
     @patch.object(brain, 'logError')
@@ -206,7 +199,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Test suite for the Jasper client code.')
     parser.add_argument('--light', action='store_true',
-                        help='runs a subset of the tests (only requires Python dependencies)')
+                        help="runs a subset of the tests (only requires Python dependencies)")
     args = parser.parse_args()
 
     test_cases = [TestBrain, TestModules]
@@ -219,7 +212,4 @@ if __name__ == '__main__':
     for test_case in test_cases:
         suite.addTests(unittest.TestLoader().loadTestsFromTestCase(test_case))
 
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
-
-    if not result.wasSuccessful():
-        sys.exit("Tests failed")
+    unittest.TextTestRunner(verbosity=2).run(suite)

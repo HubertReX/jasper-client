@@ -1,13 +1,23 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import imaplib
 import email
 import re
 from dateutil import parser
 from app_utils import *
+from email.header import decode_header
 
-WORDS = ["EMAIL", "INBOX"]
+WORDS = ["EMAIL", "MEJLE", "MAIL"]
 
-
+def decodeField(string):
+    parts = []
+    for decoded, charset in decode_header(string):
+        if not charset :
+            charset = 'iso-8859-1'
+        parts.append(unicode(decoded, charset, 'replace'))
+    
+    return u' '.join(parts)
+    
 def getSender(email):
     """
         Returns the best-guess sender of an email.
@@ -18,7 +28,7 @@ def getSender(email):
         Returns:
         Sender of the email.
     """
-    sender = email['From']
+    sender = decodeField(email['From'])
     m = re.match(r'(.*)\s<.*>', sender)
     if m:
         return m.group(1)
@@ -84,7 +94,7 @@ def fetchUnreadEmails(profile, since=None, markRead=False, limit=None):
     return msgs
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Responds to user-input, typically speech text, with a summary of
         the user's Gmail inbox, reporting on the number of unread emails
@@ -99,30 +109,32 @@ def handle(text, mic, profile):
         msgs = fetchUnreadEmails(profile, limit=5)
 
         if isinstance(msgs, int):
-            response = "You have %d unread emails." % msgs
+            response = "Masz %d nieprzeczytanych mejli." % msgs
             mic.say(response)
             return
 
-        senders = [getSender(e) for e in msgs]
+        senders = [getSender(e).replace('"','').encode('utf-8') for e in msgs]
+        #if senders:
+        #  senders = [sender.encode('utf-8') for sender in senders]
     except imaplib.IMAP4.error:
         mic.say(
-            "I'm sorry. I'm not authenticated to work with your Gmail.")
+            "Wybacz, ale nie mam jeszcze dostępu do Twojej skrzynki pocztowej.")
         return
 
     if not senders:
-        mic.say("You have no unread emails.")
+        mic.say("Brak nieprzeczytanych mejli.")
     elif len(senders) == 1:
-        mic.say("You have one unread email from " + senders[0] + ".")
+        mic.say("Masz jednego nieprzeczytanego mejla od " + senders[0] + ".")
     else:
-        response = "You have %d unread emails" % len(
+        response = "Masz %d nieprzeczytanych mejli" % len(
             senders)
         unique_senders = list(set(senders))
         if len(unique_senders) > 1:
-            unique_senders[-1] = 'and ' + unique_senders[-1]
-            response += ". Senders include: "
-            response += '...'.join(senders)
+            unique_senders[-1] = 'oraz ' + unique_senders[-1]
+            response += ". Wśród nadawców są: "
+            response += ', '.join(senders)
         else:
-            response += " from " + unittest[0]
+            response += " od " + unittest[0]
 
         mic.say(response)
 
@@ -134,4 +146,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\bemail\b', text, re.IGNORECASE))
+    return bool(re.search(r'\b(email|mejle|mail|maile|imeil)\b', text, re.IGNORECASE))

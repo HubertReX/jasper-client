@@ -1,11 +1,12 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import re
 import datetime
 import feedparser
 from app_utils import getTimezone
 from semantic.dates import DateService
 
-WORDS = ["WEATHER", "TODAY", "TOMORROW"]
+WORDS = ["POGODA", "PROGNOZA", "DZISIAJ", "JUTRO"]
 
 
 def replaceAcronyms(text):
@@ -13,10 +14,10 @@ def replaceAcronyms(text):
 
     def parseDirections(text):
         words = {
-            'N': 'north',
-            'S': 'south',
-            'E': 'east',
-            'W': 'west',
+            'N': 'północ',
+            'S': 'południe',
+            'E': 'wschód',
+            'W': 'zachód',
         }
         output = [words[w] for w in list(text)]
         return ' '.join(output)
@@ -25,19 +26,22 @@ def replaceAcronyms(text):
     for w in acronyms:
         text = text.replace(w, parseDirections(w))
 
-    text = re.sub(r'(\b\d+)F(\b)', '\g<1> Fahrenheit\g<2>', text)
-    text = re.sub(r'(\b)mph(\b)', '\g<1>miles per hour\g<2>', text)
-    text = re.sub(r'(\b)in\.', '\g<1>inches', text)
+    text = re.sub(r'(\b\d+)F(\b)', '\g<1> Fahrenheita\g<2>', text)
+    text = re.sub(r'(\b\d+)C(\b)', '\g<1> Celciusza\g<2>', text)
+    text = re.sub(r'(\b)mph(\b)', '\g<1>mil na godzinę\g<2>', text)
+    text = re.sub(r'(\b)kph(\b)', '\g<1>kilometrów na godzinę\g<2>', text)
+    text = re.sub(r'(\b)in\.', '\g<1>cali', text)
+    text = re.sub(r'(\b)mm\.', '\g<1>milimetrów', text)
 
     return text
 
 
 def getForecast(profile):
-    return feedparser.parse("http://rss.wunderground.com/auto/rss_full/"
+    return feedparser.parse("http://polish.wunderground.com/auto/rss_full/"
                             + str(profile['location']))['entries']
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Responds to user-input, typically speech text, with a summary of
         the relevant weather for the requested date (typically, weather
@@ -51,7 +55,7 @@ def handle(text, mic, profile):
 
     if not profile['location']:
         mic.say(
-            "I'm sorry, I can't seem to access that information. Please make sure that you've set your location on the dashboard.")
+            "Wybacz, ale nie mogę podać prognozy pogody. Wprowadź proszę w ustawieniach miasto.")
         return
 
     tz = getTimezone(profile)
@@ -63,12 +67,12 @@ def handle(text, mic, profile):
     weekday = service.__daysOfWeek__[date.weekday()]
 
     if date.weekday() == datetime.datetime.now(tz=tz).weekday():
-        date_keyword = "Today"
+        date_keyword = "Dzisiaj"
     elif date.weekday() == (
             datetime.datetime.now(tz=tz).weekday() + 1) % 7:
-        date_keyword = "Tomorrow"
+        date_keyword = "Jutro"
     else:
-        date_keyword = "On " + weekday
+        date_keyword = weekday
 
     forecast = getForecast(profile)
 
@@ -77,18 +81,18 @@ def handle(text, mic, profile):
     for entry in forecast:
         try:
             date_desc = entry['title'].split()[0].strip().lower()
-            if date_desc == 'forecast': #For global forecasts
+            if date_desc == 'Prognoza': #For global forecasts
             	date_desc = entry['title'].split()[2].strip().lower()
-            	weather_desc = entry['summary']
+            	weather_desc = entry['description']
 
-            elif date_desc == 'current': #For first item of global forecasts
+            elif date_desc == 'Obecne': #For first item of global forecasts
             	continue
             else:
-            	weather_desc = entry['summary'].split('-')[1] #US forecasts
+            	weather_desc = entry['description'].split('|')[1] #US forecasts
 
             if weekday == date_desc:
-                output = date_keyword + \
-                    ", the weather will be " + weather_desc + "."
+                output = "Prognoza pogody na " + \
+                     date_keyword + weather_desc + "."
                 break
         except:
             continue
@@ -98,7 +102,7 @@ def handle(text, mic, profile):
         mic.say(output)
     else:
         mic.say(
-            "I'm sorry. I can't see that far ahead.")
+            "Wybacz, ale brak prognozy")
 
 
 def isValid(text):
@@ -108,4 +112,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\b(weathers?|temperature|forecast|outside|hot|cold|jacket|coat|rain)\b', text, re.IGNORECASE))
+    return bool(re.search(r'\b(pogoda|temperatura|prognoza)\b', text, re.IGNORECASE))

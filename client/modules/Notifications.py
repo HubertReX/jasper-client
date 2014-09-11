@@ -1,12 +1,13 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import re
 from facebook import *
 
 
-WORDS = ["FACEBOOK", "NOTIFICATION"]
+WORDS = ["FACEBOOK", "FEJSBUK", "POWIADOMIENIE", "POWIADOMIENIA"]
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Responds to user-input, typically speech text, with a summary of
         the user's Facebook notifications, including a count and details
@@ -25,14 +26,14 @@ def handle(text, mic, profile):
         results = graph.request("me/notifications")
     except GraphAPIError:
         mic.say(
-            "I have not been authorized to query your Facebook. If you would like to check your notifications in the future, please visit the Jasper dashboard.")
+            "Nie mam uprawnienia do twojego konta na Fejsbuku. Sprawdź ustawienia.")
         return
     except:
         mic.say(
-            "I apologize, there's a problem with that service at the moment.")
+            "Wybacz, ale ta usługa jest chwilowo niedostępna.")
 
     if not len(results['data']):
-        mic.say("You have no Facebook notifications. ")
+        mic.say("Brak nowych powiadomień na Fejsbuku")
         return
 
     updates = []
@@ -40,8 +41,8 @@ def handle(text, mic, profile):
         updates.append(notification['title'])
 
     count = len(results['data'])
-    mic.say("You have " + str(count) +
-            " Facebook notifications. " + " ".join(updates) + ". ")
+    mic.say("Masz " + str(count) +
+            " nowych powiadomień na Fejsbuku. " + " ".join(updates) + ". ")
 
     return
 
@@ -53,4 +54,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\bnotification|Facebook\b', text, re.IGNORECASE))
+    return bool(re.search(r'\b(powiadomienie|powiadomienia|fejsbuk|Facebook)\b', text, re.IGNORECASE))

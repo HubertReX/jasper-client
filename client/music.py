@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import re
 import difflib
 from mpd import MPDClient
@@ -106,7 +107,7 @@ class Music:
     #@reconnect -- this makes the function return None for some reason!
     def current_song(self):
         item = self.client.playlistinfo(int(self.client.status()["song"]))[0]
-        result = "%s by %s" % (item["title"], item["artist"])
+        result = "%s %s" % (item["title"], item["artist"])
         return result
 
     @reconnect

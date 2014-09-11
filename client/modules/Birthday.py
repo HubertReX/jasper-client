@@ -1,13 +1,14 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import datetime
 import re
 from facebook import *
 from app_utils import getTimezone
 
-WORDS = ["BIRTHDAY"]
+WORDS = ["URODZINY"]
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Responds to user-input, typically speech text, by listing the user's
         Facebook friends with birthdays today.
@@ -26,11 +27,11 @@ def handle(text, mic, profile):
             "me/friends", args={'fields': 'id,name,birthday'})
     except GraphAPIError:
         mic.say(
-            "I have not been authorized to query your Facebook. If you would like to check birthdays in the future, please visit the Jasper dashboard.")
+            "Nie mam uprawnienia do twojego konta na Fejsbuku. Sprawdź ustawienia.")
         return
     except:
         mic.say(
-            "I apologize, there's a problem with that service at the moment.")
+            "Wybacz, ale ta usługa jest chwilowo niedostępna.")
         return
 
     needle = datetime.datetime.now(tz=getTimezone(profile)).strftime("%m/%d")
@@ -45,12 +46,12 @@ def handle(text, mic, profile):
 
     if len(people) > 0:
         if len(people) == 1:
-            output = people[0] + " has a birthday today."
+            output = people[0] + " ma dzisiaj urodziny."
         else:
-            output = "Your friends with birthdays today are " + \
-                ", ".join(people[:-1]) + " and " + people[-1] + "."
+            output = "Oto znajomi, którzy dzisiaj obchodzą urodziny " + \
+                ", ".join(people[:-1]) + " oraz " + people[-1] + "."
     else:
-        output = "None of your friends have birthdays today."
+        output = "Nitk z twoich znajomych nie obchodzi dzisiaj urodzin."
 
     mic.say(output)
 
@@ -62,4 +63,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'birthday', text, re.IGNORECASE))
+    return bool(re.search(r'urodziny', text, re.IGNORECASE))

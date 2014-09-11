@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from sys import maxint
 import random
 
@@ -7,7 +8,7 @@ WORDS = []
 PRIORITY = -(maxint + 1)
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Reports that the user has unclear or unusable input.
 
@@ -17,9 +18,10 @@ def handle(text, mic, profile):
         profile -- contains information related to the user (e.g., phone number)
     """
 
-    messages = ["I'm sorry, could you repeat that?",
-                "My apologies, could you try saying that again?",
-                "Say that again?", "I beg your pardon?"]
+    messages = ["Przepraszam, czy mogę prosić o powtórzenie?",
+                "Jeszcze raz proszę?",
+                "Proszę powtórzyć.", 
+                "Co proszę?"]
 
     message = random.choice(messages)
 

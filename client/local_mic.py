@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 A drop-in replacement for the Mic class that allows for all I/O to occur
 over the terminal. Useful for debugging. Unlike with the typical Mic
@@ -9,7 +10,8 @@ implementation, Jasper is always active listening with local_mic.
 class Mic:
     prev = None
 
-    def __init__(self, speaker, passive_stt_engine, active_stt_engine):
+    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger):
+        self.logger = logger
         return
 
     def passiveListen(self, PERSONA):
@@ -24,4 +26,5 @@ class Mic:
         return input
 
     def say(self, phrase, OPTIONS=None):
-        print "JASPER: " + phrase
+        self.logger.info(phrase)
+        print "JAN: " + phrase

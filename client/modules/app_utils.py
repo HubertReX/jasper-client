@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import smtplib
 from email.MIMEText import MIMEText
 import urllib2
@@ -49,8 +50,8 @@ def emailUser(profile, SUBJECT="", BODY=""):
         # add footer
         if BODY:
             BODY = profile['first_name'] + \
-                ",<br><br>Here are your top headlines:" + BODY
-            BODY += "<br>Sent from your Jasper"
+                ",<br><br>Oto twoje wiadomości:" + BODY
+            BODY += "<br>Wysłane przez Jana"
 
         recipient = profile['gmail_address']
         if profile['first_name'] and profile['last_name']:
@@ -111,7 +112,7 @@ def isNegative(phrase):
         Arguments:
         phrase -- the input phrase to-be evaluated
     """
-    return bool(re.search(r'\b(no(t)?|don\'t|stop|end)\b', phrase, re.IGNORECASE))
+    return bool(re.search(r'\b(nie|stop|koniec)\b', phrase, re.IGNORECASE))
 
 
 def isPositive(phrase):
@@ -121,4 +122,4 @@ def isPositive(phrase):
         Arguments:
         phrase -- the input phrase to-be evaluated
     """
-    return bool(re.search(r'\b(sure|yes|yeah|go)\b', phrase, re.IGNORECASE))
+    return bool(re.search(r'\b(tak|jasne|oczywiście|chętnie|dobrze|goł)\b', phrase, re.IGNORECASE))

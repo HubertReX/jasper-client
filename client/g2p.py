@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
 import subprocess
 import re
@@ -17,6 +18,7 @@ def parseOutput(output):
 
 
 def translateWord(word):
+    #print PHONETISAURUS_PATH + "/g014b2b.fst"
     out = subprocess.check_output(['phonetisaurus-g2p', '--model=%s' %
                                   PHONETISAURUS_PATH + "/g014b2b.fst", '--input=%s' % word])
     return parseLine(out)

@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
     The Mic class handles all interactions with the microphone and speaker.
 """
@@ -8,14 +9,15 @@ from wave import open as open_audio
 import audioop
 import pyaudio
 import alteration
-
+import re
+import time
 
 class Mic:
 
     speechRec = None
     speechRec_persona = None
 
-    def __init__(self, speaker, passive_stt_engine, active_stt_engine):
+    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger):
         """
         Initiates the pocketsphinx instance.
 
@@ -27,6 +29,7 @@ class Mic:
         self.speaker = speaker
         self.passive_stt_engine = passive_stt_engine
         self.active_stt_engine = active_stt_engine
+        self.logger = logger
 
     def getScore(self, data):
         rms = audioop.rms(data, 2)
@@ -45,6 +48,8 @@ class Mic:
 
         # prepare recording stream
         audio = pyaudio.PyAudio()
+        defaultSampleRate = audio.get_device_info_by_index(0)['defaultSampleRate']
+        self.logger.debug("defaultSampleRate: %s" % repr(defaultSampleRate))
         stream = audio.open(format=pyaudio.paInt16,
                             channels=1,
                             rate=RATE,
@@ -92,6 +97,10 @@ class Mic:
 
         # prepare recording stream
         audio = pyaudio.PyAudio()
+        
+        #defaultSampleRate = audio.get_device_info_by_index(0)['defaultSampleRate']
+        #self.logger.debug("defaultSampleRate: %s" % repp(defaultSampleRate))
+        
         stream = audio.open(format=pyaudio.paInt16,
                             channels=1,
                             rate=RATE,
@@ -137,7 +146,7 @@ class Mic:
 
         # no use continuing if no flag raised
         if not didDetect:
-            print "No disturbance detected"
+            self.logger.info("No disturbance detected")
             return
 
         # cutoff any recording before this disturbance was detected
@@ -194,6 +203,8 @@ class Mic:
 
         # prepare recording stream
         audio = pyaudio.PyAudio()
+        defaultSampleRate = audio.get_device_info_by_index(0)['defaultSampleRate']
+        self.logger.debug("defaultSampleRate: %s" % repr(defaultSampleRate))
         stream = audio.open(format=pyaudio.paInt16,
                             channels=1,
                             rate=RATE,
@@ -234,7 +245,19 @@ class Mic:
 
         return self.active_stt_engine.transcribe(AUDIO_FILE, MUSIC)
 
-    def say(self, phrase, OPTIONS=" -vdefault+m3 -p 40 -s 160 --stdout > say.wav"):
+    def say(self, phrase): #OPTIONS=" -vdefault+m3 -p 40 -s 160 --stdout > say.wav"
         # alter phrase before speaking
+        self.logger.info(">>>>>>>>>>>>>>>>>>>")
+        self.logger.info("JASPER: " + phrase  )
+        self.logger.info(">>>>>>>>>>>>>>>>>>>")
         phrase = alteration.clean(phrase)
-        self.speaker.say(phrase)
+        if len(phrase) > 30:
+            phrases = re.compile('\. |, |: |; |\n', re.UNICODE).split(unicode(phrase , 'utf-8'))
+        else:
+            phrases = [phrase]
+        
+        
+        for p in phrases:
+            self.logger.info("JASPER: " + p)
+            #self.speaker.say(phrase)
+            time.sleep(2)

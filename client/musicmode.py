@@ -1,4 +1,5 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
     Manages the conversation
 """
@@ -13,7 +14,8 @@ import stt
 
 class MusicMode:
 
-    def __init__(self, PERSONA, mic):
+    def __init__(self, PERSONA, mic, logger):
+        self.logger = logger
         self.persona = PERSONA
         # self.mic - we're actually going to ignore the mic they passed in
         self.music = Music()
@@ -43,8 +45,8 @@ class MusicMode:
         # create a new mic with the new music models
         self.mic = Mic(
             speaker.newSpeaker(),
-            stt.PocketSphinxSTT(lmd_music="languagemodel_spotify.lm", dictd_music="dictionary_spotify.dic"),
-            stt.PocketSphinxSTT(lmd_music="languagemodel_spotify.lm", dictd_music="dictionary_spotify.dic")
+            stt.PocketSphinxSTT(lmd_music="languagemodel_spotify.lm", dictd_music="dictionary_spotify.dic", logger=self.logger),
+            stt.PocketSphinxSTT(lmd_music="languagemodel_spotify.lm", dictd_music="dictionary_spotify.dic", logger=self.logger)
         )
 
     def delegateInput(self, input):

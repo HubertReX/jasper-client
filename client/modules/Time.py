@@ -1,13 +1,14 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import datetime
 import re
 from app_utils import getTimezone
 from semantic.dates import DateService
 
-WORDS = ["TIME"]
+WORDS = ["CZAS", "GODZINA"]
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Reports the current time based on the user's timezone.
 
@@ -21,7 +22,7 @@ def handle(text, mic, profile):
     now = datetime.datetime.now(tz=tz)
     service = DateService()
     response = service.convertTime(now)
-    mic.say("It is %s right now." % response)
+    mic.say("Teraz jest godzina %s." % response)
 
 
 def isValid(text):
@@ -31,4 +32,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\btime\b', text, re.IGNORECASE))
+    return bool(re.search(r'\b(czas|godzina)\b', text, re.IGNORECASE))

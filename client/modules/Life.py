@@ -1,11 +1,12 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import random
 import re
 
-WORDS = ["MEANING", "OF", "LIFE"]
+WORDS = ["JAKI", "JEST", "SENS", "ŻYCIA"]
 
 
-def handle(text, mic, profile):
+def handle(text, mic, profile, logger):
     """
         Responds to user-input, typically speech text, by relaying the
         meaning of life.
@@ -15,8 +16,10 @@ def handle(text, mic, profile):
         mic -- used to interact with the user (for both input and output)
         profile -- contains information related to the user (e.g., phone number)
     """
-    messages = ["It's 42, you idiot.",
-                "It's 42. How many times do I have to tell you?"]
+    messages = ["Odpowiedź brzmi 42, głupcze.",
+                "Odpowiedź brzmi 42. Ile razy mam to powtarzać?",
+                "Odpowiedź brzmi 42. Zdaję się, że już to mówiłam..."
+                ]
 
     message = random.choice(messages)
 
@@ -30,4 +33,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\bmeaning of life\b', text, re.IGNORECASE))
+    return bool(re.search(r'\bjaki jest sens życia\b', text, re.IGNORECASE))

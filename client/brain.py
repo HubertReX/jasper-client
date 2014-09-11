@@ -1,4 +1,6 @@
-# -*- coding: utf-8-*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import logging
 from os import listdir
 
@@ -15,7 +17,7 @@ def logError():
 
 class Brain(object):
 
-    def __init__(self, mic, profile):
+    def __init__(self, mic, profile, logger):
         """
         Instantiates a new Brain object, which cross-references user
         input with a list of modules. Note that the order of brain.modules
@@ -43,10 +45,13 @@ class Brain(object):
                 return module_names
 
             def import_module(name):
+                self.logger.info("Loading module: %s" % name)
                 mod = __import__(name)
                 components = name.split('.')
                 for comp in components[1:]:
                     mod = getattr(mod, comp)
+                if hasattr(mod, 'WORDS'):
+                  self.logger.info("    key words: %s" % repr(mod.WORDS))
                 return mod
 
             def get_module_priority(m):
@@ -60,6 +65,7 @@ class Brain(object):
             modules.sort(key=get_module_priority, reverse=True)
             return modules
 
+        self.logger = logger
         self.mic = mic
         self.profile = profile
         self.modules = get_modules()
@@ -76,10 +82,11 @@ class Brain(object):
             if module.isValid(text):
 
                 try:
-                    module.handle(text, self.mic, self.profile)
+                    module.handle(text, self.mic, self.profile, self.logger)
                     break
                 except:
-                    logError()
+                    #logError()
+                    self.logger.error("Failed to execute module", exc_info=True)
                     self.mic.say(
-                        "I'm sorry. I had some trouble with that operation. Please try again later.")
+                        "Wybacz, ale wystąpił problem techniczny z tą operacją. Spróbuj później.")
                     break
