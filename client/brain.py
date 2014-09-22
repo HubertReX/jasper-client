@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import logging
 from os import listdir
+from recompile import *
 
 
 def logError():
@@ -29,46 +29,61 @@ class Brain(object):
         profile -- contains information related to the user (e.g., phone number)
         """
 
-        def get_modules():
-            """
-            Dynamically loads all the modules in the modules folder and sorts
-            them by the PRIORITY key. If no PRIORITY is defined for a given
-            module, a priority of 0 is assumed.
-            """
-
-            folder = 'modules'
-
-            def get_module_names():
-                module_names = [m.replace('.py', '')
-                                for m in listdir(folder) if m.endswith('.py')]
-                module_names = map(lambda s: folder + '.' + s, module_names)
-                return module_names
-
-            def import_module(name):
-                self.logger.info("Loading module: %s" % name)
-                mod = __import__(name)
-                components = name.split('.')
-                for comp in components[1:]:
-                    mod = getattr(mod, comp)
-                if hasattr(mod, 'WORDS'):
-                  self.logger.info("    key words: %s" % repr(mod.WORDS))
-                return mod
-
-            def get_module_priority(m):
-                try:
-                    return m.PRIORITY
-                except:
-                    return 0
-
-            modules = map(import_module, get_module_names())
-            modules = filter(lambda m: hasattr(m, 'WORDS'), modules)
-            modules.sort(key=get_module_priority, reverse=True)
-            return modules
-
         self.logger = logger
         self.mic = mic
         self.profile = profile
-        self.modules = get_modules()
+        self.modules = self.get_modules()
+
+    def reload_modules(self):
+        self.modules = self.get_modules()
+
+    def get_modules(self):
+        """
+        Dynamically loads all the modules in the modules folder and sorts
+        them by the PRIORITY key. If no PRIORITY is defined for a given
+        module, a priority of 0 is assumed.
+        """
+
+        folder = 'modules'
+
+        def get_module_names():
+            module_names = [m.replace('.py', '')
+                            for m in listdir(folder) if m.endswith('.py')]
+            module_names = map(lambda s: folder + '.' + s, module_names)
+            return module_names
+
+        def import_module(name):
+            self.logger.info("Loading module: %s" % name)
+            #mod = __import__(name)
+            res = recompile(name)
+            
+            if res == "ok":
+              mod = sys.modules[name]
+            else:
+              try:
+                mod = sys.modules[name]
+                self.logger.error("error reloading module %s - will use old one\n%s" % (name, res), exc_info=True)
+              except:
+                mod = object()
+                self.logger.error("error loading module %s\n%s" % (name, res), exc_info=True)
+            #components = name.split('.')
+            #for comp in components[1:]:
+            #    mod = getattr(mod, comp)
+            if hasattr(mod, 'WORDS'):
+              self.logger.info("    key words: %s" % ', '.join(mod.WORDS))
+            return mod
+
+        def get_module_priority(m):
+            try:
+                return m.PRIORITY
+            except:
+                return 0
+
+        modules = map(import_module, get_module_names())
+        modules = filter(lambda m: hasattr(m, 'WORDS'), modules)
+        modules.sort(key=get_module_priority, reverse=True)
+        return modules
+
 
     def query(self, text):
         """
