@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib2
 import re
@@ -33,7 +32,7 @@ def getTopStories(maxResults=None):
     page = urllib2.urlopen(req).read()
     soup = BeautifulSoup(page)
     matches = soup.findAll('td', class_="title")
-    matches = [m.a for m in matches if m.a and m.text != u'More']
+    matches = [m.a for m in matches if m.a and m.text != 'More']
     matches = [HNStory(m.text, m['href']) for m in matches]
 
     if maxResults:

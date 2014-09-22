@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import imaplib
 import email
@@ -16,7 +15,7 @@ def decodeField(string):
             charset = 'iso-8859-1'
         parts.append(unicode(decoded, charset, 'replace'))
     
-    return u' '.join(parts)
+    return ' '.join(parts)
     
 def getSender(email):
     """
