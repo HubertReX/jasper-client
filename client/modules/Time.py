@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# a może teraz?
 import datetime
 import re
 from app_utils import getTimezone
@@ -22,7 +22,7 @@ def handle(text, mic, profile, logger):
     now = datetime.datetime.now(tz=tz)
     service = DateService()
     response = service.convertTime(now)
-    mic.say("Teraz jest godzina %s." % response)
+    mic.say("Teraz jest godzina|~ %s." % response)
 
 
 def isValid(text):
