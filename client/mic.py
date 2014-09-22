@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# a może teraz?
 """
     The Mic class handles all interactions with the microphone and speaker.
 """
@@ -11,6 +11,7 @@ import pyaudio
 import alteration
 import re
 import time
+import str_formater
 
 class Mic:
 
@@ -41,6 +42,7 @@ class Mic:
         # TODO: Consolidate variables from the next three functions
         THRESHOLD_MULTIPLIER = 1.8
         RATE = 16000
+        RATE = 44100
         CHUNK = 1024
 
         # number of seconds to allow to establish threshold
@@ -87,6 +89,7 @@ class Mic:
         THRESHOLD_MULTIPLIER = 1.8
         AUDIO_FILE = "passive.wav"
         RATE = 16000
+        RATE = 44100
         CHUNK = 1024
 
         # number of seconds to allow to establish threshold
@@ -217,18 +220,21 @@ class Mic:
 
         for i in range(0, RATE / CHUNK * LISTEN_TIME):
 
-            data = stream.read(CHUNK)
-            frames.append(data)
-            score = self.getScore(data)
+            try:
+              data = stream.read(CHUNK)
+              frames.append(data)
+              score = self.getScore(data)
 
-            lastN.pop(0)
-            lastN.append(score)
+              lastN.pop(0)
+              lastN.append(score)
 
-            average = sum(lastN) / float(len(lastN))
+              average = sum(lastN) / float(len(lastN))
 
-            # TODO: 0.8 should not be a MAGIC NUMBER!
-            if average < THRESHOLD * 0.8:
-                break
+              # TODO: 0.8 should not be a MAGIC NUMBER!
+              if average < THRESHOLD * 0.8:
+                  break
+            except IOError:
+              self.logger.critical("IOError error reading chunk", exc_info=True)
 
         self.speaker.play("../static/audio/beep_lo.wav")
 
@@ -251,13 +257,5 @@ class Mic:
         self.logger.info("JASPER: " + phrase  )
         self.logger.info(">>>>>>>>>>>>>>>>>>>")
         phrase = alteration.clean(phrase)
-        if len(phrase) > 30:
-            phrases = re.compile('\. |, |: |; |\n', re.UNICODE).split(unicode(phrase , 'utf-8'))
-        else:
-            phrases = [phrase]
-        
-        
-        for p in phrases:
-            self.logger.info("JASPER: " + p)
-            #self.speaker.say(phrase)
-            time.sleep(2)
+        self.speaker.say(phrase)
+
