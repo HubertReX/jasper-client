@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import re
 from facebook import *
@@ -25,10 +24,12 @@ def handle(text, mic, profile, logger):
     try:
         results = graph.request("me/notifications")
     except GraphAPIError:
+        logger.error("error getting response form facebook api, for key: %s" % oauth_access_token, exc_info=True)
         mic.say(
             "Nie mam uprawnienia do twojego konta na Fejsbuku. Sprawdź ustawienia.")
         return
     except:
+        logger.error("error getting response form facebook api, for key: %s" % oauth_access_token, exc_info=True)
         mic.say(
             "Wybacz, ale ta usługa jest chwilowo niedostępna.")
 
