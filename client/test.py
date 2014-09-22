@@ -13,6 +13,7 @@ import yaml
 import test_mic
 import g2p
 import brain
+import logger
 
 
 def activeInternet():
@@ -21,6 +22,23 @@ def activeInternet():
         return True
     except URLError:
         return False
+
+class jasperLogger:
+
+    def __init__(self, level=logging.DEBUG, logFile='jasper.log'):
+      self.logger = logging.getLogger('jasper')
+      self.logger.setLevel(level)
+      self.fh = logging.FileHandler(logFile)
+      self.fh.setLevel(level)
+      self.formatter = logging.Formatter('%(asctime)s %(module)s %(levelname)s %(message)s')
+      self.fh.setFormatter(self.formatter)
+      self.logger.addHandler(self.fh)
+
+    def getLogger(self):
+      return self.logger
+
+    def logError(self, msg):
+      self.logger.error(msg, exc_info=True)
 
 
 class TestMic(unittest.TestCase):
@@ -201,6 +219,9 @@ if __name__ == '__main__':
     parser.add_argument('--light', action='store_true',
                         help="runs a subset of the tests (only requires Python dependencies)")
     args = parser.parse_args()
+
+    l = jasperLogger(level=logging.DEBUG)
+    log = l.getLogger()
 
     test_cases = [TestBrain, TestModules]
     if not args.light:
