@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
 import traceback
@@ -62,13 +61,13 @@ class PocketSphinxSTT(object):
         else:
             self.speechRec.decode_raw(wavFile)
             result = self.speechRec.get_hyp()
-
+        result = result[0].decode('utf-8')
         self.logger.info("===================")
-        self.logger.info("YOU: " + result[0]  )
+        self.logger.info("YOU: " + result  )
         self.logger.info("===================")
         
 
-        return result[0]
+        return result
 
 """
 Speech-To-Text implementation which relies on the Google Speech API.
@@ -133,7 +132,7 @@ class GoogleSTT(object):
             response_read = response_url.read()
             self.logger.debug("raw response: %s" % repr(response_read))
             response_read = response_read.decode('utf-8')
-            if response_read = '{"result":[]}\n':
+            if response_read == '{"result":[]}\n':
               text = None
             else:
               decoded = json.loads(response_read.split("\n")[1])
