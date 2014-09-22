@@ -11,4 +11,4 @@ fi
 
 cd $JASPER_HOME/jasper/client
 rm -rf ../old_client
-(python main.py  > /var/log/jasper.log 2>&1 ) &
+(python main.py $1 > /var/log/jasper.log 2>&1 ) &
