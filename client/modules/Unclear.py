@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from sys import maxint
 import random
@@ -19,9 +18,9 @@ def handle(text, mic, profile, logger):
     """
 
     messages = ["Przepraszam, czy mogę prosić o powtórzenie?",
-                "Jeszcze raz proszę?",
+                "Jeszcze raz proszę.",
                 "Proszę powtórzyć.", 
-                "Co proszę?"]
+                "Nierozumiem"]
 
     message = random.choice(messages)
 
