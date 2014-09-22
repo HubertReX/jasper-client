@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import feedparser
 import app_utils
@@ -47,7 +46,7 @@ def handle(text, mic, profile, logger):
     mic.say("Proszę o cierpliwość, pobieram aktualne wiadomości.")
     articles = getTopArticles(maxResults=3)
     titles = [" ".join(x.title.split(" - ")[:-1]) for x in articles]
-    all_titles = "... ".join(str(idx + 1) + ")" +
+    all_titles = "| ".join(str(idx + 1) + ") " +
                              title for idx, title in enumerate(titles))
 
     def handleResponse(text):
@@ -88,7 +87,7 @@ def handle(text, mic, profile, logger):
                     else:
                         if not app_utils.emailUser(profile, SUBJECT="", BODY=article_link):
                             mic.say(
-                                "Wybacz, ale mam problem z wysłaniem wiadomości. Sprawdź proszę podany numer telefonu i operatora.")
+                                "Wybacz, ale mam problem z wysłaniem wiadomości.| Sprawdź proszę podany numer telefonu i operatora.")
                             return
 
             # if prefers email, we send once, at the end
@@ -96,7 +95,7 @@ def handle(text, mic, profile, logger):
                 body += "</ul>"
                 if not app_utils.emailUser(profile, SUBJECT="Your Top Headlines", BODY=body):
                     mic.say(
-                        "Wybacz, ale mam problem z wysłaniem wiadomości. Sprawdź proszę podany numer telefonu i operatora.")
+                        "Wybacz, ale mam problem z wysłaniem wiadomości.| Sprawdź proszę podany numer telefonu i operatora.")
                     return
 
             mic.say("Gotowe")
@@ -106,13 +105,13 @@ def handle(text, mic, profile, logger):
             mic.say("W porządku, nie wysyłam wiadomości")
 
     if 'phone_number' in profile:
-        mic.say("Oto najważniejsze wiadomości. " + all_titles.encode('utf-8') +
-                ". Czy mam wysłać Ci wiadomości? Jeśli tak, to którą?")
+        mic.say("Oto najważniejsze wiadomości.| " + all_titles.encode('utf-8') +
+                ".| Czy mam wysłać Ci wiadomości? Jeśli tak, to którą?")
         handleResponse(mic.activeListen())
 
     else:
         mic.say(
-            "Oto najważniejsze wiadomości. " + all_titles)
+            "Oto najważniejsze wiadomości.| " + all_titles)
 
 
 def isValid(text):
@@ -122,4 +121,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\b(wiadomości)\b', text.encode('utf-8'), re.IGNORECASE))
+    return bool(re.search(r'\b(wiadomości)\b', text, re.IGNORECASE))
