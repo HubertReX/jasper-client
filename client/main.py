@@ -2,43 +2,54 @@
 # -*- coding: utf-8 -*-
 import yaml
 import sys
+import jasperLogger
 import logging
 import speaker
 import stt
 from conversation import Conversation
+import argparse
+import shelve
+
+parser = argparse.ArgumentParser(
+description='the Jasper client')
+parser.add_argument('--local', '-l', action='store_true',
+                    help="use local mic (input from keyboard); useful for debug")
+parser.add_argument('--no-speaker', '-n', action='store_true',
+                    help="do not use speach synthesiser (output to console and log); useful for debug")
+parser.add_argument('--log-to-console', '-c', action='store_true',
+                    help="log everything to console instead of jasper.log file")
+args = parser.parse_args()
 
 
 def isLocal():
-    if len(sys.argv) > 1:
-        for i in sys.argv.items() == "--local"
-    return res
+    return args.local
 
-if isLocal():
+if args.local:
     from local_mic import Mic
 else:
     from mic import Mic
 
 
-class jasperLogger:
-
-    def __init__(self, level=logging.DEBUG, logFile='jasper.log'):
-      self.logger = logging.getLogger('jasper')
-      self.logger.setLevel(level)
-      self.fh = logging.FileHandler(logFile)
-      self.fh.setLevel(level)
-      self.formatter = logging.Formatter('%(asctime)s %(module)s %(levelname)s %(message)s')
-      self.fh.setFormatter(self.formatter)
-      self.logger.addHandler(self.fh)
-
-    def getLogger(self):
-      return self.logger
-
-    def logError(self, msg):
-      self.logger.error(msg, exc_info=True)
+#class jasperLogger:
+#
+#    def __init__(self, level=logging.DEBUG, logFile='jasper.log'):
+#      self.logger = logging.getLogger('jasper')
+#      self.logger.setLevel(level)
+#      self.fh = logging.FileHandler(logFile)
+#      self.fh.setLevel(level)
+#      self.formatter = logging.Formatter('%(asctime)s %(module)s %(levelname)s %(message)s')
+#      self.fh.setFormatter(self.formatter)
+#      self.logger.addHandler(self.fh)
+#
+#    def getLogger(self):
+#      return self.logger
+#
+#    def logError(self, msg):
+#      self.logger.error(msg, exc_info=True)
 
 if __name__ == "__main__":
-
-    l = jasperLogger(level=logging.DEBUG)
+    con = args.log_to_console
+    l = jasperLogger.jasperLogger(level=logging.DEBUG, console=con)
     log = l.getLogger()
 
     log.info( "===========================================================")
@@ -56,11 +67,15 @@ if __name__ == "__main__":
     try:
         stt_engine_type = profile['stt_engine']
     except KeyError:
-        log.warn( "stt_engine not specified in profile, defaulting to PocketSphinx")
+        log.warn("stt_engine not specified in profile, defaulting to PocketSphinx")
         stt_engine_type = "sphinx"
-
+    
+    log.debug("command line args: %s" % args)
     try:
-      spk = speaker.newSpeaker(log)
+      if args.no_speaker:
+        spk = speaker.DummySpeaker(log)
+      else:
+        spk = speaker.newSpeaker(log)
       passiveSTT = stt.PocketSphinxSTT(logger=log)
       activeSTT  = stt.newSTTEngine(stt_engine_type, logger=log, api_key=api_key)
       mic = Mic(spk, passiveSTT, activeSTT, log)
