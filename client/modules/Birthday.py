@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import datetime
 import re
@@ -26,22 +25,26 @@ def handle(text, mic, profile, logger):
         results = graph.request(
             "me/friends", args={'fields': 'id,name,birthday'})
     except GraphAPIError:
+        logger.error("error getting response form facebook api, for key: %s" % oauth_access_token, exc_info=True)
         mic.say(
             "Nie mam uprawnienia do twojego konta na Fejsbuku. Sprawdź ustawienia.")
         return
     except:
+        logger.error("error getting response form facebook api, for key: %s" % oauth_access_token, exc_info=True)
         mic.say(
             "Wybacz, ale ta usługa jest chwilowo niedostępna.")
         return
 
     needle = datetime.datetime.now(tz=getTimezone(profile)).strftime("%m/%d")
-
+    logger.debug("friends list %s" % results)
     people = []
     for person in results['data']:
         try:
+            logger.debug("name %s birthday %s" % (person['name'], person['birthday']))
             if needle in person['birthday']:
                 people.append(person['name'])
         except:
+            logger.error("error parsing contact list", exc_info=True)
             continue
 
     if len(people) > 0:
@@ -51,7 +54,7 @@ def handle(text, mic, profile, logger):
             output = "Oto znajomi, którzy dzisiaj obchodzą urodziny " + \
                 ", ".join(people[:-1]) + " oraz " + people[-1] + "."
     else:
-        output = "Nitk z twoich znajomych nie obchodzi dzisiaj urodzin."
+        output = "Nikt z twoich znajomych nie obchodzi dzisiaj urodzin."
 
     mic.say(output)
 
