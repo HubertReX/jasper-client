@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from notifier import Notifier
 from musicmode import *
@@ -58,13 +57,15 @@ class Conversation(object):
 
             if threshold:
                 input = self.mic.activeListen(threshold)
-                self.logger.debug("got threshold %s and input %s" % (threshold, repr(input) ) )
+                self.logger.debug("got threshold %s and input %s" % (threshold, input ) )
                 if input:
                     if any(x in input.upper() for x in ["KONIEC"]):
                       repeat = False
                       self.logger.info("Quiting after voice request")
                       self.mic.say("Kończę pracę. Do usłyszenia.")
+                    elif any(x in input.upper().replace('ł','Ł') for x in ["PRZEŁADUJ"]):
+                      self.brain.reload_modules()
                     else:
                       self.delegateInput(input)
                 else:
-                    self.mic.say("Powtórz poroszę.")
+                    self.mic.say("Powtórz proszę.")
