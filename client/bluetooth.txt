@@ -1,0 +1,65 @@
+hciconfig hci0 up
+hcitool scan
+bluez-simple-agent hci0 00:18:42:92:B2:76
+
+nano /etc/bluetooth/audio.conf
+nano /var/lib/bluetooth/00\:11\:67\:D8\:0F\:AD/config
+
+nano /etc/pulse/daemon.conf
+nano /etc/bluetooth/main.conf
+nano /etc/udev/rules.d/99-input.rules
+nano /usr/lib/udev/bluetooth
+
+nano /usr/share/alsa/alsa.conf
+nano /etc/asound.conf 
+amixer -c 1
+cat /proc/asound/cards
+
+less /var/log/bluetooth_dev
+hciconfig hci0
+hcitool scan
+###########
+bluetoothd -d -n
+hcitool cc 00:18:42:92:B2:76
+aplay -Dbluetooth -c1 -r16000 jasper/static/audio/cache/0018.wav
+####################
+
+
+http://www.linuxquestions.org/questions/linux-wireless-networking-41/setting-up-bluez-with-a-passkey-pin-to-be-used-as-headset-for-iphone-816003/
+#I disabled SSP on the Linux device.
+hciconfig hci0 sspmode 0
+
+#############
+
+http://blog.whatgeek.com.pt/2014/04/20/raspberry-pi-bluetooth-wireless-speaker/
+gpasswd -a pi bluetooth
+
+bluez-test-audio connect 00:18:42:92:B2:76
+
+mplayer -ao alsa:device=bluetooth 01.mp3
+mplayer -ao alsa:device=hw=1.0 01.mp3
+
+aplay -Dbluetooth -c1 -r16000 jasper/static/audio/cache/0018.wav
+aplay -Dhw:1,0 -c1 -r16000 jasper/static/audio/cache/0018.wav
+
+mpg321 -a bluetooth -g 15 /home/pi/jasper/static/audio/cache/0010.wav
+#mpg321 -a hw:1,0 01.mp3 ###### NO GOOD
+
+aplay -Dplug:bluetooth /home/pi/jasper/static/audio/cache/0010.wav
+
+MAC="00:18:42:92:B2:76"
+MAC_ADD="dev_${MAC//:/_}"
+BT_ADAPTER=`dbus-send --system --print-reply --dest=org.bluez /org.bluez.Manager.DefaultAdapter | awk '/object path/ {print $3}'`
+
+BT_ADAPTER="${BT_ADAPTER//\"/}/$MAC_ADD"
+echo "Connecting to $BT_ADAPTER..."
+
+if [ "$1" == "on" ]; then
+    dbus-send --print-reply --system --dest=org.bluez $BT_ADAPTER org.bluez.AudioSink.Connect
+elif [ "$1" == "off" ]; then
+    dbus-send --print-reply --system --dest=org.bluez $BT_ADAPTER org.bluez.AudioSink.Disconnect
+fi
+
+dbus-send --print-reply --system --dest=org.bluez /org/bluez/3809/hci0 org.bluez.Adapter.FindDevice string:00:18:42:92:B2:76
+dbus-send --print-reply --system --dest=org.bluez $BT_ADAPTER                                org.bluez.AudioSink.Connect
+dbus-send --print-reply --system --dest=org.bluez /org/bluez/3809/hci0/dev_00_18_42_92_B2_76 org.bluez.AudioSink.Connect
