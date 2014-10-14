@@ -12,10 +12,18 @@ HOST = "192.168.1.100"
 PORT = 80
 USERNAME = 'xbmc'
 PASSWORD = '1'
-PLAY_MSG   = '{"jsonrpc": "2.0", "method": "Player.PlayPause", "params": { "playerid": 0 }, "id": 1}'
+PLAY_MSG   = '{"jsonrpc": "2.0", "method": "Player.PlayPause", "params": { "playerid": 1}, "id": 1}'
 CLEAR_MSG  = '{"jsonrpc": "2.0", "method": "Playlist.Clear",   "params": {"playlistid":1}, "id": 1}'
-ADD_MSG    = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid":1, %s}, "id" : 1}'
-ALBUM_ITEM = '"item" :{ "albumid" : %d}'
+ADD_MSG    = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid":1, "item": { "albumid" : %d}}, "id" : 1}'
+GET_PLAYLIST = """{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "Playlist.GetItems",
+  "params": {
+    "playlistid": 1
+  }
+}"""
+ALBUM_ITEM = '"item": { "albumid" : %d}\n'
 OPEN_MSG   = '{"jsonrpc": "2.0", "method": "Player.Open",      "params": {"item":{"playlistid":1, "position" : 0}}, "id": 1}'
 GET_ALBUMS_FROM_ARTIST = """{
   "jsonrpc": "2.0",
@@ -70,8 +78,13 @@ def get_albums_list_from_artist(artist):
     albums_list = []
     if res.has_key('result'):
       for album in res['result']['albums']:
-          print album['title'], album['year']
-          albums_list.append(ALBUM_ITEM % album['albumid'])
+          #print album['title'], album['year'], album['albumid']
+          el = album['albumid']
+          if el not in albums_list:
+              #print "add"
+              albums_list.append(el)
+
+
       return albums_list
     elif res.has_key('error'):
         print("no albums found: %s" % res['error'] )
@@ -79,9 +92,10 @@ def get_albums_list_from_artist(artist):
 
 def play_albums(albums_list):
       send_json(CLEAR_MSG)
-      msg = ADD_MSG % ','.join(albums_list)
-      print send_json(msg)
-      print send_json(OPEN_MSG)
+      for el in albums_list:
+         send_json(ADD_MSG % el)
+      #print send_json(GET_PLAYLIST)
+      send_json(OPEN_MSG)
 
 def play_artist(artist):
     list = get_albums_list_from_artist(artist)
