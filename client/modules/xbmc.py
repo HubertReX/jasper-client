@@ -12,19 +12,25 @@ HOST = "192.168.1.100"
 PORT = 80
 USERNAME = 'xbmc'
 PASSWORD = '1'
-PLAY_MSG   = '{"jsonrpc": "2.0", "method": "Player.PlayPause", "params": { "playerid": 1}, "id": 1}'
-CLEAR_MSG  = '{"jsonrpc": "2.0", "method": "Playlist.Clear",   "params": {"playlistid":1}, "id": 1}'
-ADD_MSG    = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid":1, "item": { "albumid" : %d}}, "id" : 1}'
-GET_PLAYLIST = """{
+
+AUDIO_PLAYER = 0
+MOVIE_PLAYER = 1
+PHOTO_PLAYER = 2
+
+#PLAY_MSG   = '{"jsonrpc": "2.0", "method": "Player.PlayPause", "params": {"playerid": %d}, "id": 1}'
+CLEAR_MSG        = '{"jsonrpc": "2.0", "method": "Playlist.Clear",   "params": {"playlistid": %d}, "id": 1}'
+ADD_ALBUM_MSG    = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid": %d, "item": { "albumid" : %d}}, "id" : 1}'
+ADD_MOVIE_MSG    = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid": %d, "item": { "movieid" : %d}}, "id" : 1}'
+GET_PLAYLIST     = """{
   "jsonrpc": "2.0",
   "id": 1,
   "method": "Playlist.GetItems",
   "params": {
-    "playlistid": 1
+    "playlistid": %d
   }
 }"""
-ALBUM_ITEM = '"item": { "albumid" : %d}\n'
-OPEN_MSG   = '{"jsonrpc": "2.0", "method": "Player.Open",      "params": {"item":{"playlistid":1, "position" : 0}}, "id": 1}'
+
+OPEN_MSG   = '{"jsonrpc": "2.0", "method": "Player.Open",      "params": {"item":{"playlistid": %d, "position" : 0}}, "id": 1}'
 GET_ALBUMS_FROM_ARTIST = """{
   "jsonrpc": "2.0",
   "method": "AudioLibrary.GetAlbums",
@@ -53,7 +59,28 @@ GET_ALBUMS_FROM_ARTIST = """{
   "id": "libAlbums"
 }
 """
-
+GET_MOVIES = """
+{
+  "jsonrpc": "2.0",
+  "params": {
+    "sort": {
+      "order": "ascending",
+      "method": "year"
+    },
+    "filter": {
+      "operator": "contains",
+      "field": "title",
+      "value": "%s"
+    },
+    "properties": [
+      "title",
+      "year"
+    ]
+  },
+  "method": "VideoLibrary.GetMovies",
+  "id": "libMovies"
+}
+"""
 def send_json(msg):
     url = "http://%s:%d/jsonrpc" % (HOST, PORT)
     req = urllib2.Request(url, msg);
@@ -70,7 +97,7 @@ def send_json(msg):
 
 class Mic:
     def say(self, msg):
-        print msg
+        print "say:", msg
 
 def get_albums_list_from_artist(artist):
     msg = GET_ALBUMS_FROM_ARTIST % artist
@@ -90,17 +117,50 @@ def get_albums_list_from_artist(artist):
         print("no albums found: %s" % res['error'] )
         return None
 
+def get_move_by_name(movie):
+    msg = GET_MOVIES % movie
+    res = json.loads(send_json(msg) )
+    movies_list = []
+    if res.has_key('result'):
+      if res['result']['limits']['total'] > 0:
+          for movie in res['result']['movies']:
+              #print album['title'], album['year'], album['albumid']
+              el = movie['movieid']
+              if el not in movies_list:
+                  #print "add"
+                  movies_list.append(el)
+
+      return movies_list
+    elif res.has_key('error'):
+        print("no movies found: %s" % res['error'] )
+        return None
+
+def play_movies(movie):
+      movies_list = get_move_by_name(movie)
+      if movies_list:
+          send_json(CLEAR_MSG % MOVIE_PLAYER)
+          for el in movies_list:
+             send_json(ADD_MOVIE_MSG % (MOVIE_PLAYER, el))
+          #print send_json(GET_PLAYLIST % MOVIE_PLAYER)
+          send_json(OPEN_MSG % MOVIE_PLAYER)
+          return True
+      else:
+          return False
+
 def play_albums(albums_list):
-      send_json(CLEAR_MSG)
+      send_json(CLEAR_MSG % AUDIO_PLAYER)
       for el in albums_list:
-         send_json(ADD_MSG % el)
-      #print send_json(GET_PLAYLIST)
-      send_json(OPEN_MSG)
+         send_json(ADD_ALBUM_MSG % (AUDIO_PLAYER, el))
+      #print send_json(GET_PLAYLIST % AUDIO_PLAYER)
+      send_json(OPEN_MSG % AUDIO_PLAYER)
 
 def play_artist(artist):
     list = get_albums_list_from_artist(artist)
     if list:
         play_albums(list)
+        return True
+    else:
+        return False
 
 
 def handle(text, mic, profile, logger):
@@ -116,10 +176,10 @@ def handle(text, mic, profile, logger):
         typical command:
         puść|odtwarzaj|graj|zagraj
             [mi|teraz|proszę|wszystkie płyty|płytę]
-              zespołu|zespół|artystę|wykonawcę|płytę %ARTIST% $
+              zespołu|zespół|artystę|wykonawcę|płyty %ARTIST% $
                 | album|płytę %ALBUM%
               muzykę dla dzieci
-              losowę muzykę
+              losowo muzykę
               radio %RADIO%
               filmiki dla dzieci
               film %MOVIE%
@@ -139,7 +199,7 @@ def handle(text, mic, profile, logger):
     init_pause = False
     phrases = text.decode('utf-8').upper().encode("utf-8").split(" ")
 
-    print " ".join(phrases)
+    #print " ".join(phrases)
     for a in ACTION_PLAY:
         if a in phrases:
             init_play = True
@@ -172,8 +232,9 @@ def handle(text, mic, profile, logger):
             content_type = "MOVIE"
             index = phrases.index(c) + 1
             movie = " ".join(phrases[index:])
+            #print movie
             break
-    for c in CONTENT_MOVIE:
+    for c in CONTENT_SHOW:
         if c in phrases:
             content_type = "SHOW"
             index = phrases.index(c) + 1
@@ -183,8 +244,14 @@ def handle(text, mic, profile, logger):
         mic.say("Wybacz, ale nie rozumiem polecenia")
         return
     if content_type == "MUSIC":
-        print(artist)
-        play_artist(artist)
+        res = play_artist(artist)
+        if not res:
+            mic.say("Wybacz, ale nie znaleziono artysty o nazwie %s" % artist)
+
+    if content_type == "MOVIE":
+        res = play_movies(movie)
+        if not res:
+            mic.say("Wybacz, ale nie znaleziono filmu o nazwie %s" % movie)
 
 def isValid(text):
     """
@@ -198,7 +265,8 @@ def isValid(text):
 
 if __name__ == "__main__":
     m = Mic()
-    t = "odtwarzaj wykonawcę kult"
+    #t = "odtwarzaj wykonawcę kult"
+    t = "odtwarzaj film ralf demolka"
     handle(t, m, None, None)
     #get_albums_list_from_artist('metallica')
 
