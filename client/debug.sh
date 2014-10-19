@@ -11,4 +11,4 @@ fi
 
 cd $JASPER_HOME/jasper/client
 rm -rf ../old_client
-python main.py -l -n
+python main.py -c $1 $2 $3

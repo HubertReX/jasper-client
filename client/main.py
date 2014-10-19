@@ -14,6 +14,8 @@ parser = argparse.ArgumentParser(
 description='the Jasper client')
 parser.add_argument('--local', '-l', action='store_true',
                     help="use local mic (input from keyboard); useful for debug")
+parser.add_argument('--pipe', '-p', action='store_true',
+                    help="use mic as named pipe (input from www server)")
 parser.add_argument('--no-speaker', '-n', action='store_true',
                     help="do not use speach synthesiser (output to console and log); useful for debug")
 parser.add_argument('--log-to-console', '-c', action='store_true',
@@ -26,6 +28,8 @@ def isLocal():
 
 if args.local:
     from local_mic import Mic
+elif args.pipe:
+    from pipe_mic import Mic
 else:
     from mic import Mic
 
@@ -76,8 +80,12 @@ if __name__ == "__main__":
         spk = speaker.DummySpeaker(log)
       else:
         spk = speaker.newSpeaker(log)
-      passiveSTT = stt.PocketSphinxSTT(logger=log)
-      activeSTT  = stt.newSTTEngine(stt_engine_type, logger=log, api_key=api_key)
+      if not args.pipe:
+        passiveSTT = stt.PocketSphinxSTT(logger=log)
+        activeSTT  = stt.newSTTEngine(stt_engine_type, logger=log, api_key=api_key)
+      else:
+        passiveSTT = None
+        activeSTT  = None
       mic = Mic(spk, passiveSTT, activeSTT, log)
     except:
         log.critical( "fatal error creating mic", exc_info=True)
