@@ -8,6 +8,24 @@ import arrow
 import str_formater
 
 WORDS = ["POGODA", "PROGNOZA", "DZISIAJ", "JUTRO"]
+HELP  = {"name": "pogoda",
+         "description": "Możesz poznać lokalną prognozę pogody na dziś, jutro lub pojutrze",
+         "samples": ["jaka jest prognoza pogody", "jaka będzie pogoda jutro", "prognoza na wtorek"],
+         # "topics": {"muzyka": "powiedz odtwarzaj lub gra lub zagraj lub puść| "+
+         #                       "następnie zespół lub zespołu lub artystę lub wykonawcę lub płyty|" +
+         #                       "a następnie właściwą nazwę wykonawcy.|"+
+         #                       "Kommenda ta, doda do kolejki odtwarzania wszystkie albumy wykonawcy.",
+         #             "film":   "powiedz odtwarzaj lub graj lub zagraj lub puść| "+
+         #                       "następnie film" +
+         #                       "a następnie polski tytuł filmu.|"+
+         #                       "Jeżeli wynik wyszukania zwróci więcej niż jeden wynik,"+
+         #                       "to wszystkie filmy zostaną dodane do kolejki.|"+
+         #                       "Nie trzeba wypowiadać pełnej nazwy filmu,|"+
+         #                       "wystarczy użyć unikalnego słowa lub frazy",
+         #            "uwagi ogólne": "jeżeli nie udaje się prawidłowo rozpoznać nazwy artysty lub filmu|"+
+         #                            "nazwę można przeliterować."
+         #            }
+        }
 
 
 def parseDirections(text):

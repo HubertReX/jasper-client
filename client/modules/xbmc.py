@@ -7,6 +7,24 @@ import urllib2
 import re
 
 WORDS = ["PUŚĆ", "ODTWARZAJ", "GRAJ", "ZAGRAJ", "WSTRZYMAJ", "ZATRZYMAJ"]
+HELP  = {"name": "xbmc",
+         "description": "XBMC służy do sterowania odtwarzeniem muzyki, filmów, seriali oraz zdjęć.",
+         "samples": ["zagraj zespół kult", "odtwazaj film gwiezdne wojny", "włacz radio ram"],
+         "topics": {"muzyka": "powiedz odtwarzaj lub gra lub zagraj lub puść,|"+
+                               "następnie zespół lub zespołu lub artystę lub wykonawcę lub płyty,|" +
+                               "a następnie właściwą nazwę wykonawcy.|"+
+                               "Kommenda ta, doda do kolejki odtwarzania wszystkie albumy wykonawcy.",
+                     "film":   "powiedz odtwarzaj lub graj lub zagraj lub puść,| "+
+                               "następnie film, " +
+                               "a następnie polski tytuł filmu.|"+
+                               "Jeżeli wyszukiwanie zwróci więcej niż jeden wynik,|"+
+                               "to wszystkie filmy zostaną dodane do kolejki.|"+
+                               "Nie trzeba wypowiadać pełnej nazwy filmu,| "+
+                               "wystarczy użyć unikalnego słowa lub frazy",
+                    "uwagi ogólne": "jeżeli nie udaje się prawidłowo rozpoznać nazwy artysty lub filmu,|"+
+                                    "nazwę można przeliterować."
+                    }
+          }
 
 HOST = "192.168.1.100"
 PORT = 80
