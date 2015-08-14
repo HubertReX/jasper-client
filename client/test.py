@@ -3,7 +3,7 @@
 import os
 
 if os.environ.get('JASPER_HOME') is None:
-    os.environ['JASPER_HOME'] = '/home/pi'
+    os.environ['JASPER_HOME'] = '/home/osmc'
 
 import unittest
 import argparse

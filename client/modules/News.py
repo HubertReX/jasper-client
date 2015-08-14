@@ -4,7 +4,16 @@ import app_utils
 import re
 from semantic.numbers import NumberService
 
-WORDS = ["WIADOMOŚCI", "TAK", "NIE", "PIERWSZĄ", "DRUGĄ", "TRZECIĄ"]
+WORDS = ["WIADOMOŚCI", "AKTUALNOŚCI", "INFORMACJE"]
+HELP  = {"name": "wiadomości",
+         "description": "Dzięki temu poleceniu możesz poznać akutalne wiadomości.| Możesz również wysłanie wybranych informacji mailem.",
+         "samples": ["podaj aktualne wiadomości", "przeczytaj mi aktualności", "masz jakieś nowe informacje?"],
+         "topics": {"wysyłka":  "Po przeczytaniu nagłówków wiadomości możesz poprosić o ich wysłanie na maila.| "+
+                                "Powiedz tak lub poproszę aby otrzymać wszystkie wiadomości.|"+
+                                "Powiedz pierwszy, pierwszą lub pierwsza aby dostać jedynie pierwszy artykuł."
+                    }
+          }
+
 
 PRIORITY = 3
 
@@ -32,7 +41,7 @@ def getTopArticles(maxResults=None):
     return articles
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, with a summary of
         the day's top news headlines, sending them to the user over email
@@ -53,12 +62,25 @@ def handle(text, mic, profile, logger):
 
         def extractOrdinals(text):
             output = []
-            service = NumberService()
-            if text:
-              for w in text.split():
-                  if w in service.__ordinals__:
-                      output.append(service.__ordinals__[w])
-            return [service.parse(w) for w in output]
+            if 'pierwszy' in text or 'pierwsza' in text or 'pierwszą' in text:
+                output.append(1)
+            if 'drugi' in text or 'druga' in text or 'drugą' in text:
+                output.append(2)
+            if 'trzeci' in text or 'trzecia' in text or 'trzecią' in text:
+                output.append(3)
+            if 'czwarty' in text or 'czwarta' in text or 'czwartą' in text:
+                output.append(4)
+            if 'piąty' in text or 'piąta' in text or 'piątą' in text:
+                output.append(5)
+
+            return output
+            #output = []
+            #service = NumberService()
+            #if text:
+            #  for w in text.split():
+            #      if w in service.__ordinals__:
+            #          output.append(service.__ordinals__[w])
+            #return [service.parse(w) for w in output]
 
         chosen_articles = extractOrdinals(text)
         send_all = not chosen_articles and app_utils.isPositive(text)
@@ -85,7 +107,7 @@ def handle(text, mic, profile, logger):
                     if profile['prefers_email']:
                         body += article_link
                     else:
-                        if not app_utils.emailUser(profile, SUBJECT="", BODY=article_link):
+                        if not app_utils.emailUser(profile, logger, SUBJECT="", BODY=article_link):
                             mic.say(
                                 "Wybacz, ale mam problem z wysłaniem wiadomości.| Sprawdź proszę podany numer telefonu i operatora.")
                             return
@@ -93,7 +115,7 @@ def handle(text, mic, profile, logger):
             # if prefers email, we send once, at the end
             if profile['prefers_email']:
                 body += "</ul>"
-                if not app_utils.emailUser(profile, SUBJECT="Your Top Headlines", BODY=body):
+                if not app_utils.emailUser(profile, logger, SUBJECT="Twoje wiadomości", BODY=body):
                     mic.say(
                         "Wybacz, ale mam problem z wysłaniem wiadomości.| Sprawdź proszę podany numer telefonu i operatora.")
                     return
@@ -106,8 +128,8 @@ def handle(text, mic, profile, logger):
 
     if 'phone_number' in profile:
         mic.say("Oto najważniejsze wiadomości.| " + all_titles.encode('utf-8') +
-                ".| Czy mam wysłać Ci wiadomości? Jeśli tak, to którą?")
-        handleResponse(mic.activeListen())
+                ".| Czy mam wysłać Ci wiadomości? Którąś konkretnie?")
+        handleResponse(mic.activeListen(1))
 
     else:
         mic.say(
@@ -121,4 +143,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\b(wiadomości)\b', text, re.IGNORECASE))
+    return bool(re.search(r'\b(wiadomości|aktualności|informacje)\b', text, re.IGNORECASE))

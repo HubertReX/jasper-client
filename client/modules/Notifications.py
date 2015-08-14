@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import re
 from facebook import *
-
+import str_formater
 
 WORDS = ["FACEBOOK", "FEJSBUK", "POWIADOMIENIE", "POWIADOMIENIA"]
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, with a summary of
         the user's Facebook notifications, including a count and details
@@ -38,12 +38,17 @@ def handle(text, mic, profile, logger):
         return
 
     updates = []
-    for notification in results['data']:
-        updates.append(notification['title'])
+    logger.debug(results)
+    if results['data']:
+      for notification in results['data']:
+          #str_formater.checkFormat(notification['title'], logger)
+          title =  str_formater.unicodeToUTF8(notification['title'], logger)
+          updates.append(title)
+          logger.debug("from:" + repr(notification['from']) + " to:" +  repr(notification['to']) + " created_time:" + repr(notification['created_time']) + " unread:" +  repr(notification['unread']) )
 
     count = len(results['data'])
     mic.say("Masz " + str(count) +
-            " nowych powiadomień na Fejsbuku. " + " ".join(updates) + ". ")
+            " nowych powiadomień na Fejsbuku.|" + "| ".join(updates) )
 
     return
 

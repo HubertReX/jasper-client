@@ -5,10 +5,10 @@ import re
 from app_utils import getTimezone
 from semantic.dates import DateService
 
-WORDS = ["CZAS", "GODZINA"]
+WORDS = ["CZAS", "GODZINA", "GODZINĘ"]
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Reports the current time based on the user's timezone.
 

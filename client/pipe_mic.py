@@ -10,32 +10,36 @@ no need for stt engine (chrome browser uses google engine).
 import re
 import alteration
 import os
-import time
+import io
 import str_formater
 
-PIPE_NAME = '/home/pi/flask/jasper_pipe_mic'
+PIPE_NAME = '/home/osmc/flask/jasper_pipe_mic'
 
 class Mic:
     prev = None
 
     def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger):
         self.speaker = speaker
+        self.first_run = True
         #self.passive_stt_engine = passive_stt_engine
         #self.active_stt_engine = active_stt_engine
         self.logger = logger
         try:
             if not os.path.exists(PIPE_NAME):
                 os.mkfifo(PIPE_NAME)
-            self.pipein = open(PIPE_NAME, 'r')
+            self.pipein = io.open(PIPE_NAME, 'r') #, "utf-8"
         except:
             self.logger.error("error preparing named pipe", exc_info=True)
             exit(1)
         return
 
     def passiveListen(self, PERSONA):
-        return True, "JAN"
+        return True, "JASPER"
 
     def activeListen(self, THRESHOLD=None, LISTEN=True, MUSIC=False):
+        if self.first_run:
+            self.first_run = False
+            return ""
         if not LISTEN:
             return self.prev
         stop = False

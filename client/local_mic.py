@@ -19,6 +19,7 @@ class Mic:
         self.passive_stt_engine = passive_stt_engine
         self.active_stt_engine = active_stt_engine
         self.logger = logger
+        self.prev = ""
         return
 
     def passiveListen(self, PERSONA):
@@ -35,9 +36,9 @@ class Mic:
 
     def say(self, phrase, OPTIONS=None):
         #phrase = phrase.decode('utf8')
-        print "JAN: " + phrase
-        self.logger.info(">>>>>>>>>>>>>>>>>>>")
-        self.logger.info("JASPER: " + phrase  )
-        self.logger.info(">>>>>>>>>>>>>>>>>>>")
+        #print "JAN: " + phrase
+        #self.logger.info(">>>>>>>>>>>>>>>>>>>")
+        #self.logger.info("JASPER: " + phrase  )
+        #self.logger.info(">>>>>>>>>>>>>>>>>>>")
         phrase = alteration.clean(phrase)
         self.speaker.say(phrase)

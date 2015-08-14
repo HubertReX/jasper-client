@@ -95,8 +95,8 @@ Excerpt from sample profile.yml:
 
 
 class GoogleSTT(object):
-
-    RATE = 16000
+    # 16000
+    RATE = 44100
 
     def __init__(self, logger, api_key):
         """
@@ -136,11 +136,11 @@ class GoogleSTT(object):
               text = None
             else:
               decoded = json.loads(response_read.split("\n")[1])
-              self.logger.debug("decoded response: %s" % repr(response_read.encode('utf-8')))
+              #self.logger.debug("decoded response: %s" % repr(response_read.decode('utf-8')))
               text = decoded['result'][0]['alternative'][0]['transcript']
             if text:
                 self.logger.info("<<<<<<<<<<<<<<<<<<<")
-                self.logger.info("YOU: " + text.encode('utf-8')  )
+                self.logger.info("YOU: " + text )
                 self.logger.info("<<<<<<<<<<<<<<<<<<<")
             return text
         except Exception:

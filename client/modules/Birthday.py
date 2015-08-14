@@ -5,9 +5,13 @@ from facebook import *
 from app_utils import getTimezone
 
 WORDS = ["URODZINY"]
+HELP  = {"name": "urodziny",
+         "description": "Pozwala sprawdzić, kto z Twoich znajomych na Facebooku obchodzi dzisiaj urodziny.",
+         "samples": ["kto ma dzisiaj urodziny?", "kto obchodzi urodziny?"]
+          }
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, by listing the user's
         Facebook friends with birthdays today.

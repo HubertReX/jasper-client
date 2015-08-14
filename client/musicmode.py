@@ -2,26 +2,28 @@
 """
     Manages the conversation
 """
-
+import yaml
 import os
 from mic import Mic
 import g2p
 from music import *
 import speaker
 import stt
-
+import jasperLogger
+import logging
 
 class MusicMode:
 
-    def __init__(self, PERSONA, mic, logger):
+    def __init__(self, PERSONA, mic, logger, profile):
         self.logger = logger
         self.persona = PERSONA
         # self.mic - we're actually going to ignore the mic they passed in
-        self.music = Music()
+        #self.music = Music()
+        self.music = None
 
         # index spotify playlists into new dictionary and language models
-        original = self.music.get_soup_playlist(
-        ) + ["STOP", "CLOSE", "PLAY", "PAUSE",
+        #original = self.music.get_soup_playlist() + /
+        original = ["STOP", "CLOSE", "PLAY", "PAUSE",
              "NEXT", "PREVIOUS", "LOUDER", "SOFTER", "LOWER", "HIGHER", "VOLUME", "PLAYLIST"]
         pronounced = g2p.translateWords(original)
         zipped = zip(original, pronounced)
@@ -43,9 +45,10 @@ class MusicMode:
 
         # create a new mic with the new music models
         self.mic = Mic(
-            speaker.newSpeaker(),
+            speaker.newSpeaker(self.logger, profile),
             stt.PocketSphinxSTT(lmd_music="languagemodel_spotify.lm", dictd_music="dictionary_spotify.dic", logger=self.logger),
-            stt.PocketSphinxSTT(lmd_music="languagemodel_spotify.lm", dictd_music="dictionary_spotify.dic", logger=self.logger)
+            stt.PocketSphinxSTT(lmd_music="languagemodel_spotify.lm", dictd_music="dictionary_spotify.dic", logger=self.logger),
+            logger
         )
 
     def delegateInput(self, input):
@@ -153,11 +156,15 @@ if __name__ == "__main__":
     """
         Indexes the Spotify music library to dictionary_spotify.dic and languagemodel_spotify.lm
     """
+    profile = yaml.safe_load(open("profile.yml", "r"))
+    l = jasperLogger.jasperLogger(level=logging.DEBUG, logFile='persistentCache.log', console=True)
+    logger = l.getLogger()
 
-    musicmode = MusicMode("JASPER", None)
+    musicmode = MusicMode("JASPER", None, logger, profile)
     music = musicmode.music
 
-    original = music.get_soup() + ["STOP", "CLOSE", "PLAY",
+    #original = music.get_soup() + ["STOP", "CLOSE", "PLAY",
+    original = ["STOP", "CLOSE", "PLAY",
                                    "PAUSE", "NEXT", "PREVIOUS", "LOUDER", "SOFTER"]
     pronounced = g2p.translateWords(original)
     zipped = zip(original, pronounced)

@@ -7,6 +7,10 @@ from app_utils import *
 from email.header import decode_header
 
 WORDS = ["EMAIL", "MEJLE", "MAIL"]
+HELP  = {"name": "maile",
+         "description": "To polecenie umożliwia sprawdzenie liczby nie przeczytanych wiadomości e-mail na powiązanym końcie GMail.",
+         "samples": ["sprawdź mejle", "czy są nowe e-maile?"]
+          }
 
 def decodeField(string):
     parts = []
@@ -93,7 +97,7 @@ def fetchUnreadEmails(profile, since=None, markRead=False, limit=None):
     return msgs
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, with a summary of
         the user's Gmail inbox, reporting on the number of unread emails

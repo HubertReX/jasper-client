@@ -63,3 +63,9 @@ fi
 dbus-send --print-reply --system --dest=org.bluez /org/bluez/3809/hci0 org.bluez.Adapter.FindDevice string:00:18:42:92:B2:76
 dbus-send --print-reply --system --dest=org.bluez $BT_ADAPTER                                org.bluez.AudioSink.Connect
 dbus-send --print-reply --system --dest=org.bluez /org/bluez/3809/hci0/dev_00_18_42_92_B2_76 org.bluez.AudioSink.Connect
+
+
+########################3
+http://wiki.openmoko.org/wiki/A2DP
+
+http://wiki.openmoko.org/wiki/Manually_using_Bluetooth

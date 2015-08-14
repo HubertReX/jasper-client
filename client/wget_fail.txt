@@ -1,0 +1,9 @@
+Translacja translate.google.com (translate.google.com)... 216.58.209.46, 2a00:1450:401b:800::200e
+Łączenie się z translate.google.com (translate.google.com)|216.58.209.46|:80... połączono.
+Żądanie HTTP wysłano, oczekiwanie na odpowiedź... 302 Found
+Lokalizacja: http://ipv4.google.com/sorry/IndexRedirect?continue=http://translate.google.com/translate_tts%3Fie%3DUTF-8%26tl%3Dpl%26q%3DMasz&q=CGMSBF8oOXgY5ZeYrgUiGQDxp4NLAMTRnk0x7ZTjVuUciWMrtXF2-Zo [podążanie]
+--2015-08-08 16:02:13--  http://ipv4.google.com/sorry/IndexRedirect?continue=http://translate.google.com/translate_tts%3Fie%3DUTF-8%26tl%3Dpl%26q%3DMasz&q=CGMSBF8oOXgY5ZeYrgUiGQDxp4NLAMTRnk0x7ZTjVuUciWMrtXF2-Zo
+Translacja ipv4.google.com (ipv4.google.com)... 74.125.24.138, 74.125.24.139, 74.125.24.100, ...
+Łączenie się z ipv4.google.com (ipv4.google.com)|74.125.24.138|:80... połączono.
+Żądanie HTTP wysłano, oczekiwanie na odpowiedź... 503 Service Unavailable
+2015-08-08 16:02:13 BŁĄD 503: Service Unavailable.

@@ -111,7 +111,7 @@ def getForecast(profile):
                             + str(profile['location']))['entries']
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, with a summary of
         the relevant weather for the requested date (typically, weather

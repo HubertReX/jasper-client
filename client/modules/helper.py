@@ -7,8 +7,8 @@ WORDS = ["POMOC", "POMOCY"]
 class X:
   HELP  = {"name": "xbmc",
            "description": "XBMC służy do sterowania odtwarzeniem muzyki, filmów, seriali oraz zdjęć.",
-           "samples": ["zagraj zespół kult", "odtwazaj film gwiezdne wojny", "włacz radio ram"],
-           "topics": {"muzyka": "powiedz odtwarzaj lub gra lub zagraj lub puść,|"+
+           "samples": ["zagraj zespół kult", "odtwazaj film gwiezdne wojny", "włącz radio ram"],
+           "topics": {"muzyka": "powiedz odtwarzaj lub graj lub zagraj lub puść,|"+
                                  "następnie zespół lub zespołu lub artystę lub wykonawcę lub płyty,|" +
                                  "a następnie właściwą nazwę wykonawcy.|"+
                                  "Kommenda ta, doda do kolejki odtwarzania wszystkie albumy wykonawcy.",
@@ -87,10 +87,10 @@ def handle(text, mic, profile, logger, modules):
             subject = org_subject
             repeat  = False
         else:
-            mic.say("Aby wysłuchać szczegółowych wyjaśnień podaj nazwę interesującego Cię tematu.")
+            mic.say("Aby wysłuchać szczegółowych wyjaśnień podaj nazwę interesującego cie tematu.")
             mic.say("Powiedz wszystkie tematy aby poznać listę wszystkich tematów.")
             mic.say("Aby przerwać powiedz zakończ.")
-            subject = mic.activeListen()
+            subject = mic.activeListen(1)
 
         if subject == "zakończ":
             mic.say("Kończę interaktywny samouczek.")
@@ -119,7 +119,7 @@ def handle(text, mic, profile, logger, modules):
                     for t in sorted(help["topics"].keys()):
                         mic.say(t)
                     mic.say("By przerwać powiedz zakończ.")
-                    topic = mic.activeListen()
+                    topic = mic.activeListen(1)
 
                     if topic == "zakończ":
                         break

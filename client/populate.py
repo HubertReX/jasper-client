@@ -103,6 +103,8 @@ def run():
         print("Unrecognized STT engine. Available implementations: %s" % stt_engines.keys())
         profile["stt_engine"] = "sphinx"
 
+    print("Setting default sound device to plughw:1,1")
+    profile["snd_dev"] = "plughw:1,1"
     # write to profile
     print("Writing to profile...")
     outputFile = open("profile.yml", "w")

@@ -3,9 +3,13 @@ import random
 import re
 
 WORDS = ["JAKI", "JEST", "SENS", "ŻYCIA"]
+HELP  = {"name": "sens życia",
+         "description": "Dowiedz się jaki jest sens życia.",
+         "samples": ["jaki jest sens życia"]
+          }
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, by relaying the
         meaning of life.

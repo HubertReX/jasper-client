@@ -13,7 +13,7 @@ import datetime
 import jasperLogger
 import logging
 
-PHRASES_CACHE_DB    = 'cache_phrases.db'
+PHRASES_CACHE_DB    = 'cache_phrases_%s.db'
 MAX_INDEX_KEY       = '<MAX_INDEX>'
 PHRASES_CACHE_DIR   = '../static/audio/cache/'
 
@@ -21,19 +21,22 @@ PHRASES_CACHE_DIR   = '../static/audio/cache/'
 
 class persistentCache(object):
 
-    def __init__(self, db_file, logger, mode='c'):
-        self.cache  = shelve.open(db_file, mode)
-        self.logger = logger
+    def __init__(self, db_file, logger, voice, snd_dev, mode='c'):
+        self.cache     = shelve.open(db_file, mode)
+        self.logger    = logger
+        self.voice     = voice
+        self.snd_dev   = snd_dev
+        self.CACHE_DIR = PHRASES_CACHE_DIR + voice + '/'
 
     def hasKey(self, key):
-        return self.cache.has_key(key)
+        return self.cache.has_key(key.strip())
 
     def addToCache(self, key, value):
-        self.cache[key] = value
+        self.cache[key.strip()] = value
 
     def getFromCache(self, key):
-        if self.hasKey(key):
-          return self.cache[key]
+        if self.hasKey(key.strip()):
+          return self.cache[key.strip()]
 
 class audioCache(persistentCache):
 
@@ -42,8 +45,8 @@ class audioCache(persistentCache):
         try:
           try:
             index = self.cache.get(MAX_INDEX_KEY, 0) + 1
-            cache_file = "%s%04d.wav" % (PHRASES_CACHE_DIR, index)
-            os.system('test -d "%s" || mkdir -p "%s" && cp %s "%s"' % (PHRASES_CACHE_DIR, PHRASES_CACHE_DIR, audio_file, cache_file) )
+            cache_file = "%s%04d.mp3" % (self.CACHE_DIR, index)
+            os.system('test -d "%s" || mkdir -p "%s" && cp %s "%s"' % (self.CACHE_DIR, self.CACHE_DIR, audio_file, cache_file) )
             size = os.path.getsize(cache_file)
             ts = time.time()
             cache_entry = {'file_name': cache_file, 
@@ -61,6 +64,7 @@ class audioCache(persistentCache):
         return file_name
 
     def getFromCache(self, phrase):
+        phrase = phrase.strip()
         cache_entry = self.cache[phrase]
         ts = time.time()
         cache_entry['hits']     = cache_entry['hits'] + 1
@@ -69,6 +73,24 @@ class audioCache(persistentCache):
         self.logger.debug("got hit (%d) in cache, for phrase: %s cache file name: %s" % (cache_entry['hits'], phrase, cache_entry['file_name']))
         
         return cache_entry['file_name']
+
+    def convertWavToMp3(self):
+        sorted_list = sorted(self.cache, key=lambda m: m)
+        for phrase in sorted_list:
+            if phrase <> MAX_INDEX_KEY:
+              el = self.cache[phrase]
+              #old_file = el['file_name']
+              #new_file = '/'.join(old_file.split('/')[:-1]) + '/google/' + old_file.split('/')[-1]
+              #print new_file 
+              #os.system('avconv -y -i %s -f mp3 %s' % (old_file, new_file))
+              #size = os.path.getsize(new_file)
+              #el['file_name'] = new_file
+              #el['file_size'] = size
+              new_phrase = phrase.strip()
+              if new_phrase != phrase:
+                self.removeFromCache(phrase)
+                self.cache[new_phrase] = el
+
 
     def listCacheEntries(self, sort='hits'):
         index = self.cache.get(MAX_INDEX_KEY, 0)
@@ -79,7 +101,7 @@ class audioCache(persistentCache):
           sorted_list = sorted(self.cache, key=lambda m: m)
         else:
           sorted_list = sorted(self.cache, key=lambda m: self.cache[m][sort] if m <> MAX_INDEX_KEY else 0)
-        self.logger.info("file name                      file size hits last hit            phrase")
+        self.logger.info("file name                             file size hits last hit            phrase")
         total_size = 0
         for phrase in sorted_list:
             if phrase <> MAX_INDEX_KEY:
@@ -97,16 +119,28 @@ class audioCache(persistentCache):
                 #self.cache[phrase] = ce
         #self.logger.info("Total bytes used %d" % total_size)
         self.logger.info("Total bytes used   {:15,}".format(total_size))
-        stats = os.statvfs(PHRASES_CACHE_DIR)
+        stats = os.statvfs(self.CACHE_DIR)
         free = stats.f_bavail * stats.f_frsize
         #self.logger.info("Bytes free on disk %d" % free)
         self.logger.info("Bytes free on disk {:15,}".format(free))
 
     def play(self, filename):
         if self.checkFile(filename):
-          os.system("aplay -D hw:1,0 " + filename)
+          #os.system("aplay -D plughw:1,1 " + filename)
+          self.logger.info("mpg123 -q --audiodevice=%s %s" % (self.snd_dev, filename))
+          os.system("mpg123 -q --audiodevice=%s %s" % (self.snd_dev, filename))
 
-    
+    def findPhrase(self, phrase):
+        res = [(key, self.cache[key]) for key in self.cache.keys() if re.match(phrase, key)]
+        if res:
+          self.logger.info("file name                             file size hits last hit            phrase")
+          for key, el in res:
+            size = el.get('file_size', -1)
+            self.logger.info("%s %9d %4d %s %s" % (el['file_name'], size, el['hits'], el['last_hit'], key))
+        else:
+          self.logger.info("No phrease matching regular expression: %s" % phrase)
+        return
+
     def checkFile(self, filename):
         res = os.path.isfile(filename)
         #self.logger.info('is file %s present: %s' % (filename, str(res)))
@@ -138,13 +172,20 @@ if __name__ == "__main__":
     logger = l.getLogger()
 
     logger.info("start")
-    ac = audioCache(PHRASES_CACHE_DB, logger)
+    if len(sys.argv) < 2:
+      voice = 'google'
+    else:
+      voice = sys.argv[1]
+
+    ac = audioCache(PHRASES_CACHE_DB % voice, logger, voice, 'plughw:1,0')
+    ac.convertWavToMp3()
     ac.listCacheEntries()
-    help_msg = "\nhelp - to show this help message\nlist [sort hits|last_hit|file_name|file_size|phrase]- to list all cache entries\ntest file - to test if file is present\nplay file - to play file frome cache\nremove phrase - to remove phrase from cache\ndelete filename - to delete file name\nexit - to quite"
+    help_msg = "\nhelp - to show this help message\nlist [sort hits|last_hit|file_name|file_size|phrase]- to list all cache entries\nfind reg_exp - to find phrases matching regular expression\ntest file - to test if file is present\nplay file - to play file frome cache\nremove phrase - to remove phrase from cache\ndelete filename - to delete file name\nexit - to quit"
     logger.info(help_msg)
     repeat = True
     while repeat:
-      cmd = raw_input("what next: ").encode('utf8')
+      #cmd = raw_input("what next: ").encode('utf8')
+      cmd = raw_input("what next: ")
       res = cmd.split(' ')
       if res:
         if res[0] == 'help':
@@ -161,6 +202,8 @@ if __name__ == "__main__":
           logger.info('is file %s present: %r' % (res[1], res))
         elif res[0] == 'play':
           ac.play(res[1])
+        elif res[0] == 'find':
+          ac.findPhrase(' '.join(res[1:]))          
         elif res[0] == 'remove':
           ac.removeFromCache(' '.join(res[1:]))
         elif res[0] == 'delete':

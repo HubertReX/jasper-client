@@ -3,7 +3,8 @@ from notifier import Notifier
 from musicmode import *
 from brain import Brain
 from mpd import MPDClient
-
+import str_formater
+from modules.app_utils import *
 
 class Conversation(object):
 
@@ -28,8 +29,7 @@ class Conversation(object):
                 client.connect("localhost", 6600)
             except:
                 self.logger.warning("Failed to init MPDClient")
-                self.mic.say(
-                    "Wybacz, ale najwyraźniej usługa Spotify nie działa")
+                self.mic.say("Wybacz, ale najwyraźniej usługa Spotify nie działa")
                 return
             
             self.logger.info("waiting for Spotify playlist")
@@ -48,24 +48,38 @@ class Conversation(object):
             # Print notifications until empty
             notifications = self.notifier.getAllNotifications()
             for notif in notifications:
-                self.logger.info("Got new notification: %s" % notif.encode('utf-8') )
+                notif = str_formater.unicodeToUTF8(notif, self.logger)
+                self.logger.info("Got new notification: %s" % notif )
+                self.mic.say(notif)
 
             try:
                 threshold, transcribed = self.mic.passiveListen(self.persona)
             except:
+                self.logger.critical("fatal error processing passive listen", exc_info=True)
                 continue
 
             if threshold:
                 input = self.mic.activeListen(threshold)
-                self.logger.debug("got threshold %s and input %s" % (threshold, input ) )
+                input = str_formater.unicodeToUTF8(input, self.logger)
+                self.logger.debug("got threshold %s and input %s" % (threshold, input))
                 if input:
                     if any(x in input.upper() for x in ["KONIEC"]):
                       repeat = False
                       self.logger.info("Quiting after voice request")
                       self.mic.say("Kończę pracę. Do usłyszenia.")
-                    elif any(x in input.upper().replace('ł','Ł') for x in ["PRZEŁADUJ"]):
+                    #elif any(x in input.upper().replace('ł','Ł') for x in ["PRZEŁADUJ"]):
+                    elif any(x in upperUTF8(input) for x in ["PRZEŁADUJ"]):
                       self.brain.reload_modules()
                     else:
                       self.delegateInput(input)
                 else:
                     self.mic.say("Powtórz proszę.")
+            else:
+              if any(x in transcribed.upper() for x in ["KONIEC"]):
+                      repeat = False
+                      self.logger.info("Quiting after voice request")
+                      self.mic.say("Kończę pracę. Do usłyszenia.") 
+              elif any(x in upperUTF8(transcribed) for x in ["PRZEŁADUJ"]):
+                      self.brain.reload_modules()
+              elif any(x in upperUTF8(transcribed) for x in ["ECHO"]):
+                      self.mic.say(transcribed)

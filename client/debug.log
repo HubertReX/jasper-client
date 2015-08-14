@@ -1,0 +1,84 @@
+main INFO ===========================================================
+main INFO  JASPER The Talking Computer                               
+main INFO  Copyright 2013 Shubhro Saha & Charlie Marsh               
+main INFO ===========================================================
+main DEBUG command line args: Namespace(half_local=True, local=False, log_to_console=True, no_speaker=True, pipe=False, sock=False)
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: Czym mogę służyć, Hubert?
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: Czym mogę służyć, Hubert?
+brain INFO Loading module: modules.__init__
+brain INFO Loading module: modules.News
+brain INFO     key words: WIADOMOŚCI, AKTUALNOŚCI, INFORMACJE
+brain INFO Loading module: modules.app_utils
+brain INFO Loading module: modules.HN
+brain INFO     key words: HACKER, NEWS, YES, NO, FIRST, SECOND, THIRD
+brain INFO Loading module: modules.Time
+brain INFO     key words: CZAS, GODZINA, GODZINĘ
+brain INFO Loading module: modules.Birthday
+brain INFO     key words: URODZINY
+brain INFO Loading module: modules.Unclear
+brain INFO     key words: 
+brain INFO Loading module: modules.home_automation
+brain INFO     key words: OTWÓRZ, ZAMKNIJ, WŁĄCZ, WYŁĄCZ, URUCHOM
+brain INFO Loading module: modules.helper
+brain INFO     key words: POMOC, POMOCY
+brain INFO Loading module: modules.xbmc
+brain INFO     key words: PUŚĆ, ODTWARZAJ, GRAJ, ZAGRAJ, WSTRZYMAJ, ZATRZYMAJ
+brain INFO Loading module: modules.Life
+brain INFO     key words: JAKI, JEST, SENS, ŻYCIA
+brain INFO Loading module: modules.Notifications
+brain INFO     key words: FACEBOOK, FEJSBUK, POWIADOMIENIE, POWIADOMIENIA
+brain INFO Loading module: modules.Weather
+brain INFO     key words: POGODA, PROGNOZA, DZISIAJ, JUTRO
+brain INFO Loading module: modules.Gmail
+brain INFO     key words: EMAIL, MEJLE, MAIL
+brain INFO Loading module: modules.Joke
+brain INFO     key words: JOKE, KNOCK KNOCK
+notifier DEBUG init notif Notifier
+notifier DEBUG 2015-08-03T07:00:36+0000
+notifier DEBUG from:{'name': 'Michal Lodwich', 'id': '847947111940209'} to:{'name': 'Hubert Nafalski', 'id': '10204320651563875'} created_time:'2015-08-03T07:00:36+0000' unread:1
+notifier DEBUG from:{'name': 'Piotr Herkt', 'id': '10203349924068145'} to:{'name': 'Hubert Nafalski', 'id': '10204320651563875'} created_time:'2015-08-01T06:56:35+0000' unread:1
+notifier DEBUG from:{'name': 'Waldemar Nafalski', 'id': '1035778059789680'} to:{'name': 'Hubert Nafalski', 'id': '10204320651563875'} created_time:'2015-07-29T20:09:54+0000' unread:1
+notifier DEBUG from:{'name': 'Grzegorz Tyminski', 'id': '10207401522459833'} to:{'name': 'Hubert Nafalski', 'id': '10204320651563875'} created_time:'2015-07-28T09:05:36+0000' unread:1
+notifier DEBUG got notification: Nowy email od "Google+".
+notifier DEBUG got notification: Użytkownicy Michal Lodwich i Jacek Kaczmarek mieli urodziny w dniu 3 sierpnia.
+notifier DEBUG got notification: Piotr Herkt miał urodziny w dniu 31 lipca.
+notifier DEBUG got notification: Waldemar Nafalski zaprosił Cię do polubienia strony Ale kino+
+notifier DEBUG got notification: Użytkownicy Grzegorz Tyminski i Sylwia Kalinowska skomentowali zdjęcie użytkownika Tomasz Fułek, na którym jesteś.
+conversation INFO Got new notification: Nowy email od "Google+".
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: Nowy email od "Google+".
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: Nowy email od "Google+".
+conversation INFO Got new notification: Użytkownicy Michal Lodwich i Jacek Kaczmarek mieli urodziny w dniu 3 sierpnia.
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: Użytkownicy Michal Lodwich i Jacek Kaczmarek mieli urodziny w dniu 3 sierpnia.
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: Użytkownicy Michal Lodwich i Jacek Kaczmarek mieli urodziny w dniu 3 sierpnia.
+conversation INFO Got new notification: Piotr Herkt miał urodziny w dniu 31 lipca.
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: Piotr Herkt miał urodziny w dniu 31 lipca.
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: Piotr Herkt miał urodziny w dniu 31 lipca.
+conversation INFO Got new notification: Waldemar Nafalski zaprosił Cię do polubienia strony Ale kino+
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: Waldemar Nafalski zaprosił Cię do polubienia strony Ale kino+
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: Waldemar Nafalski zaprosił Cię do polubienia strony Ale kino+
+conversation INFO Got new notification: Użytkownicy Grzegorz Tyminski i Sylwia Kalinowska skomentowali zdjęcie użytkownika Tomasz Fułek, na którym jesteś.
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: Użytkownicy Grzegorz Tyminski i Sylwia Kalinowska skomentowali zdjęcie użytkownika Tomasz Fułek, na którym jesteś.
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: Użytkownicy Grzegorz Tyminski i Sylwia Kalinowska skomentowali zdjęcie użytkownika Tomasz Fułek, na którym jesteś.
+You: half_local_mic INFO Got echo; is waiting for ON
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: echo
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: echo
+You: half_local_mic INFO Got koniec; is waiting for ON
+conversation INFO Quiting after voice request
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+half_local_mic INFO JASPER: Kończę pracę. Do usłyszenia.
+half_local_mic INFO >>>>>>>>>>>>>>>>>>>
+speaker INFO Say phrase: Kończę pracę. Do usłyszenia.

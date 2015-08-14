@@ -97,7 +97,7 @@ class Brain(object):
             if module.isValid(text):
 
                 try:
-                    module.handle(text, self.mic, self.profile, self.logger, modules=None)
+                    module.handle(text, self.mic, self.profile, self.logger, modules=self.modules)
                     break
                 except:
                     #logError()

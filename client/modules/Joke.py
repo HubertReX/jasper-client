@@ -3,7 +3,7 @@ import random
 import re
 
 WORDS = ["JOKE", "KNOCK KNOCK"]
-
+#TODO: Translate to PL
 
 def getRandomJoke(filename="../static/text/JOKES.txt"):
     jokeFile = open(filename, "r")
@@ -30,7 +30,7 @@ def getRandomJoke(filename="../static/text/JOKES.txt"):
     return joke
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, by telling a joke.
 

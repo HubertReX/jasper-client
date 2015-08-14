@@ -7,10 +7,10 @@ import urllib2
 import re
 
 WORDS = ["PUŚĆ", "ODTWARZAJ", "GRAJ", "ZAGRAJ", "WSTRZYMAJ", "ZATRZYMAJ"]
-HELP  = {"name": "xbmc",
-         "description": "XBMC służy do sterowania odtwarzeniem muzyki, filmów, seriali oraz zdjęć.",
-         "samples": ["zagraj zespół kult", "odtwazaj film gwiezdne wojny", "włacz radio ram"],
-         "topics": {"muzyka": "powiedz odtwarzaj lub gra lub zagraj lub puść,|"+
+HELP  = {"name": "Multimedia",
+         "description": "To zestaw komend służących do sterowania odtwarzeniem muzyki, filmów, seriali oraz zdjęć.",
+         "samples": ["zagraj zespół kult", "odtwarzaj film gwiezdne wojny", "włącz radio ram"],
+         "topics": {"muzyka": "powiedz odtwarzaj lub graj lub zagraj lub puść,|"+
                                "następnie zespół lub zespołu lub artystę lub wykonawcę lub płyty,|" +
                                "a następnie właściwą nazwę wykonawcy.|"+
                                "Kommenda ta, doda do kolejki odtwarzania wszystkie albumy wykonawcy.",
@@ -26,10 +26,25 @@ HELP  = {"name": "xbmc",
                     }
           }
 
-HOST = "192.168.1.100"
-PORT = 80
-USERNAME = 'xbmc'
-PASSWORD = '1'
+SERWERS = {
+'HTPC': {
+ 'NAME': "HTPC",
+ 'DEFAULT': False,  
+ 'HOST': "192.168.1.100",
+ 'PORT': 80,
+ 'USERNAME': 'xbmc',
+ 'PASSWORD': '1'
+},
+'OSMC': {
+ 'NAME': "OSMC",
+ 'DEFAULT': True,
+ 'HOST': "192.168.1.7",
+ 'PORT': 80,
+ 'USERNAME': 'osmc',
+ 'PASSWORD': ''
+},
+}
+SERWERS['DEFAULT'] = SERWERS['HTPC']
 
 AUDIO_PLAYER = 0
 MOVIE_PLAYER = 1
@@ -39,6 +54,8 @@ PHOTO_PLAYER = 2
 CLEAR_MSG        = '{"jsonrpc": "2.0", "method": "Playlist.Clear",   "params": {"playlistid": %d}, "id": 1}'
 ADD_ALBUM_MSG    = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid": %d, "item": { "albumid" : %d}}, "id" : 1}'
 ADD_MOVIE_MSG    = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid": %d, "item": { "movieid" : %d}}, "id" : 1}'
+ADD_SHOW_MSG     = '{"jsonrpc": "2.0", "method": "Playlist.Add",     "params": {"playlistid": %d, "item": { "tvshowid" : %d}}, "id" : 1}'
+
 GET_PLAYLIST     = """{
   "jsonrpc": "2.0",
   "id": 1,
@@ -49,6 +66,7 @@ GET_PLAYLIST     = """{
 }"""
 
 OPEN_MSG   = '{"jsonrpc": "2.0", "method": "Player.Open",      "params": {"item":{"playlistid": %d, "position" : 0}}, "id": 1}'
+
 GET_ALBUMS_FROM_ARTIST = """{
   "jsonrpc": "2.0",
   "method": "AudioLibrary.GetAlbums",
@@ -77,6 +95,7 @@ GET_ALBUMS_FROM_ARTIST = """{
   "id": "libAlbums"
 }
 """
+
 GET_MOVIES = """
 {
   "jsonrpc": "2.0",
@@ -99,11 +118,38 @@ GET_MOVIES = """
   "id": "libMovies"
 }
 """
-def send_json(msg):
-    url = "http://%s:%d/jsonrpc" % (HOST, PORT)
+
+GET_SHOWS = """
+{
+  "jsonrpc": "2.0",
+  "params": {
+    "sort": {
+      "order": "ascending",
+      "method": "year"
+    },
+    "filter": {
+      "operator": "contains",
+      "field": "title",
+      "value": "%s"
+    },
+    "properties": [
+      "title",
+      "year"
+    ]
+  },
+  "method": "VideoLibrary.GetTVShows",
+  "id": "libTVShows"
+}
+"""
+
+
+
+def send_json(msg, server_name='DEFAULT'):
+    s = SERWERS[server_name]
+    url = "http://%s:%d/jsonrpc" % (s['HOST'], s['PORT'])
     req = urllib2.Request(url, msg);
     #req.add_header('Authorization', 'Basic eGJtYzox');
-    req.add_header('Authorization', b'Basic ' + base64.b64encode(USERNAME + b':' + PASSWORD))
+    req.add_header('Authorization', b'Basic ' + base64.b64encode(s['USERNAME'] + b':' + s['PASSWORD']))
     req.add_header('Content-type', 'application/json');
     res = None
     try:
@@ -135,7 +181,7 @@ def get_albums_list_from_artist(artist):
         print("no albums found: %s" % res['error'] )
         return None
 
-def get_move_by_name(movie):
+def get_movie_by_name(movie):
     msg = GET_MOVIES % movie
     res = json.loads(send_json(msg) )
     movies_list = []
@@ -153,12 +199,43 @@ def get_move_by_name(movie):
         print("no movies found: %s" % res['error'] )
         return None
 
+def get_show_by_name(show):
+    msg = GET_SHOWS % show
+    res = json.loads(send_json(msg) )
+    shows_list = []
+    if res.has_key('result'):
+      if res['result']['limits']['total'] > 0:
+          for show in res['result']['tvshows']:
+              #print album['title'], album['year'], album['albumid']
+              el = show['tvshowid']
+              if el not in shows_list:
+                  #print "add"
+                  shows_list.append(el)
+
+      return shows_list
+    elif res.has_key('error'):
+        print("no shows found: %s" % res['error'] )
+        return None
+
 def play_movies(movie):
-      movies_list = get_move_by_name(movie)
+      movies_list = get_movie_by_name(movie)
       if movies_list:
           send_json(CLEAR_MSG % MOVIE_PLAYER)
           for el in movies_list:
              send_json(ADD_MOVIE_MSG % (MOVIE_PLAYER, el))
+          #print send_json(GET_PLAYLIST % MOVIE_PLAYER)
+          send_json(OPEN_MSG % MOVIE_PLAYER)
+          return True
+      else:
+          return False
+
+
+def play_shows(show):
+      shows_list = get_show_by_name(show)
+      if shows_list:
+          send_json(CLEAR_MSG % MOVIE_PLAYER)
+          for el in shows_list:
+             send_json(ADD_SHOW_MSG % (MOVIE_PLAYER, el))
           #print send_json(GET_PLAYLIST % MOVIE_PLAYER)
           send_json(OPEN_MSG % MOVIE_PLAYER)
           return True
@@ -181,7 +258,7 @@ def play_artist(artist):
         return False
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, with a summary of
         the relevant weather for the requested date (typically, weather
@@ -270,6 +347,11 @@ def handle(text, mic, profile, logger):
         res = play_movies(movie)
         if not res:
             mic.say("Wybacz, ale nie znaleziono filmu o nazwie %s" % movie)
+
+    if content_type == "SHOW":
+        res = play_show(show)
+        if not res:
+            mic.say("Wybacz, ale nie znaleziono serialu o nazwie %s" % show)
 
 def isValid(text):
     """

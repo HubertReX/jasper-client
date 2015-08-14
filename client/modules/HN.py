@@ -7,6 +7,7 @@ import app_utils
 from semantic.numbers import NumberService
 
 WORDS = ["HACKER", "NEWS", "YES", "NO", "FIRST", "SECOND", "THIRD"]
+#TODO: Translate to PL
 
 PRIORITY = 4
 
@@ -42,7 +43,7 @@ def getTopStories(maxResults=None):
     return matches
 
 
-def handle(text, mic, profile, logger):
+def handle(text, mic, profile, logger, modules):
     """
         Responds to user-input, typically speech text, with a sample of
         Hacker News's top headlines, sending them to the user over email
@@ -93,7 +94,7 @@ def handle(text, mic, profile, logger):
                     if profile['prefers_email']:
                         body += article_link
                     else:
-                        if not app_utils.emailUser(profile, SUBJECT="", BODY=article_link):
+                        if not app_utils.emailUser(profile, logger, SUBJECT="", BODY=article_link):
                             mic.say(
                                 "I'm having trouble sending you these articles. Please make sure that your phone number and carrier are correct on the dashboard.")
                             return
@@ -101,7 +102,7 @@ def handle(text, mic, profile, logger):
             # if prefers email, we send once, at the end
             if profile['prefers_email']:
                 body += "</ul>"
-                if not app_utils.emailUser(profile, SUBJECT="From the Front Page of Hacker News", BODY=body):
+                if not app_utils.emailUser(profile, logger, SUBJECT="From the Front Page of Hacker News", BODY=body):
                     mic.say(
                         "I'm having trouble sending you these articles. Please make sure that your phone number and carrier are correct on the dashboard.")
                     return

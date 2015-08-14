@@ -32,6 +32,15 @@ class Mic:
         self.active_stt_engine = active_stt_engine
         self.logger = logger
 
+    def readChunk(self, stream, chunk):
+        try:
+          data = stream.read(chunk)
+        except IOError,e:
+          if e[1] == pyaudio.paInputOverflowed:
+            print e
+            data = '\x00'*16*512*1 #value*format*chunk*nb_channels
+        return data
+
     def getScore(self, data):
         rms = audioop.rms(data, 2)
         score = rms / 3
@@ -42,7 +51,7 @@ class Mic:
         # TODO: Consolidate variables from the next three functions
         THRESHOLD_MULTIPLIER = 1.8
         RATE = 16000
-        RATE = 44100
+        #RATE = 48000
         CHUNK = 1024
 
         # number of seconds to allow to establish threshold
@@ -89,7 +98,7 @@ class Mic:
         THRESHOLD_MULTIPLIER = 1.8
         AUDIO_FILE = "passive.wav"
         RATE = 16000
-        RATE = 44100
+        #RATE = 48000
         CHUNK = 1024
 
         # number of seconds to allow to establish threshold
@@ -188,6 +197,7 @@ class Mic:
 
         AUDIO_FILE = "active.wav"
         RATE = 16000
+        #RATE = 44100
         CHUNK = 1024
         LISTEN_TIME = 12
 
@@ -202,7 +212,7 @@ class Mic:
         if THRESHOLD == None:
             THRESHOLD = self.fetchThreshold()
 
-        self.speaker.play("../static/audio/beep_hi.wav")
+        self.speaker.play("../static/audio/beep_hi.mp3")
 
         # prepare recording stream
         audio = pyaudio.PyAudio()
@@ -236,7 +246,7 @@ class Mic:
             except IOError:
               self.logger.critical("IOError error reading chunk", exc_info=True)
 
-        self.speaker.play("../static/audio/beep_lo.wav")
+        self.speaker.play("../static/audio/beep_lo.mp3")
 
         # save the audio data
         stream.stop_stream()
