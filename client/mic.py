@@ -18,7 +18,7 @@ class Mic:
     speechRec = None
     speechRec_persona = None
 
-    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger):
+    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger, snd_dev, input_device_index=0):
         """
         Initiates the pocketsphinx instance.
 
@@ -46,7 +46,7 @@ class Mic:
         score = rms / 3
         return score
 
-    def fetchThreshold(self):
+    def fetchThreshold(self, RATE=48000, CHUNK=8192, THRESHOLD_TIME=4, AVERAGE_TIME=4):
 
         # TODO: Consolidate variables from the next three functions
         THRESHOLD_MULTIPLIER = 1.8

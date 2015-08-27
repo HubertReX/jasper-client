@@ -34,7 +34,7 @@ class Notifier(object):
 
         sched = BackgroundScheduler(timezone="UTC", daemon=True)
         sched.start()
-        self.gather()
+        #self.gather()
         sched.add_job(self.gather, 'interval', seconds=30*60)
         atexit.register(lambda: sched.shutdown(wait=False))
 

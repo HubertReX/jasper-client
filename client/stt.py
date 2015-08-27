@@ -3,6 +3,9 @@ import sys
 import traceback
 import json
 import urllib2
+from wave import open as open_audio
+
+import str_formater
 
 """
 The default Speech-to-Text implementation which relies on PocketSphinx.
@@ -62,6 +65,7 @@ class PocketSphinxSTT(object):
             self.speechRec.decode_raw(wavFile)
             result = self.speechRec.get_hyp()
         result = result[0].decode('utf-8')
+        result = str_formater.unicodeToUTF8(result, self.logger)
         self.logger.info("===================")
         self.logger.info("YOU: " + result  )
         self.logger.info("===================")
@@ -96,7 +100,7 @@ Excerpt from sample profile.yml:
 
 class GoogleSTT(object):
     # 16000
-    RATE = 44100
+    #RATE = 48000
 
     def __init__(self, logger, api_key):
         """
@@ -120,14 +124,17 @@ class GoogleSTT(object):
         wav = open(audio_file_path, 'rb')
         data = wav.read()
         wav.close()
+        f = open_audio(audio_file_path, 'r')
+        frame_rate = f.getframerate()
+        f.close()
 
         try:
             req = urllib2.Request(
                 url,
                 data=data,
                 headers={
-                    'Content-type': 'audio/l16; rate=%s' % GoogleSTT.RATE})
-            self.logger.debug("google speech api url: %s" % url)
+                    'Content-type': 'audio/l16; rate=%s' % str(frame_rate)})
+            self.logger.debug("google speech api url: %s   frame rate: %d" % (url, frame_rate))
             response_url = urllib2.urlopen(req)
             response_read = response_url.read()
             self.logger.debug("raw response: %s" % repr(response_read))
@@ -138,6 +145,7 @@ class GoogleSTT(object):
               decoded = json.loads(response_read.split("\n")[1])
               #self.logger.debug("decoded response: %s" % repr(response_read.decode('utf-8')))
               text = decoded['result'][0]['alternative'][0]['transcript']
+              text = str_formater.unicodeToUTF8(text, self.logger)
             if text:
                 self.logger.info("<<<<<<<<<<<<<<<<<<<")
                 self.logger.info("YOU: " + text )

@@ -93,9 +93,10 @@ class Brain(object):
         Arguments:
         text -- user input, typically speech, to be parsed by a module
         """
+        got_hit = False
         for module in self.modules:
             if module.isValid(text):
-
+                got_hit = True
                 try:
                     module.handle(text, self.mic, self.profile, self.logger, modules=self.modules)
                     break
@@ -105,3 +106,4 @@ class Brain(object):
                     self.mic.say(
                         "Wybacz, ale wystąpił problem techniczny z tą operacją. Spróbuj później.")
                     break
+        return got_hit

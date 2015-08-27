@@ -32,7 +32,7 @@ class GoogleSpeaker:
         self.snd_dev = profile['snd_dev']
         PHRASES_CACHE_DB    = 'cache_phrases_google.db'
         self.cache = persistent_cache.audioCache(PHRASES_CACHE_DB, logger, 'google', self.snd_dev)
-        self.cache.listCacheEntries()
+        #self.cache.listCacheEntries()
         self.ivona = pyvona.Voice(profile['ivona-tts']['access_key'], profile['ivona-tts']['secret_key'])
         self.ivona.codec          = "mp3"
         self.ivona.region         = profile['ivona-tts']['region']
@@ -113,7 +113,10 @@ class GoogleSpeaker:
     def play(self, filename):      
         #os.system("aplay -D plughw:1,0 " + filename)
         #os.system("aplay -D %s %s" % (self.snd_dev, filename))
-        cmd = "mpg123 -q --audiodevice=%s %s" % (self.snd_dev, filename)
+        if 'mp3' in filename:
+          cmd = "mpg123 -q --audiodevice=%s %s" % (self.snd_dev, filename)
+        else:
+          cmd = "aplay -D %s %s" % (self.snd_dev, filename)
         self.logger.debug("play cmd: %s" % cmd)
         os.system(cmd)
 
@@ -129,7 +132,7 @@ class IvonaSpeaker:
         self.snd_dev = profile['snd_dev']
         PHRASES_CACHE_DB    = 'cache_phrases_%s.db' % profile['ivona-tts']['voice']
         self.cache = persistent_cache.audioCache(PHRASES_CACHE_DB, logger, profile['ivona-tts']['voice'], self.snd_dev)
-        self.cache.listCacheEntries()
+        #self.cache.listCacheEntries()
         self.ivona = pyvona.Voice(profile['ivona-tts']['access_key'], profile['ivona-tts']['secret_key'])
         self.ivona.codec          = "mp3"
         self.ivona.region         = profile['ivona-tts']['region']
@@ -153,7 +156,7 @@ class IvonaSpeaker:
           res = self.ivona.fetch_voice(phrase, audio_file)
           self.logger.debug("ivona res: %s" % repr(res))
         except:
-          self.logger.critical("fatal error using google tts", exc_info=True)
+          self.logger.critical("fatal error using ivona tts", exc_info=True)
         
         return audio_file
 
@@ -171,6 +174,8 @@ class IvonaSpeaker:
         audio_sentance = ""
         index = 0
         for p in phrases:
+            
+            p = p.strip()
             self.logger.debug("JASPER: " + p)
             audio_file = None
             #self.speaker.say(p)
@@ -179,12 +184,15 @@ class IvonaSpeaker:
             #p = str_formater.unicodeToUTF8(p, self.logger)
             # ~ means do not cache - used when prases are unlikely to reacure in exact forme, for example current time
             cache = True
+
             if '~' in p:
               cache = False
               p = p.replace('~','')
             
             if self.cache.hasKey(p) and cache:
               audio_file = self.cache.getFromCache(p)
+              self.logger.debug("got file from cache: %s" + audio_file)
+              audio_sentance += ' ' + audio_file
             else:
               audio_file = self.useIvonaTTS(p)
               
@@ -196,9 +204,10 @@ class IvonaSpeaker:
                   tmp_file = "tmp_%04d.mp3" % (index)
                   os.system("mv %s %s" % (audio_file, tmp_file))
                   audio_file = tmp_file
+                
                 audio_sentance += ' ' + audio_file
               else:
-                self.logger.error('Google TTS failed! (possibly too many request)')
+                self.logger.error('Ivona TTS failed! (possibly too many request)')
                 audio_file_1 = self.cache.getFromCache('Wybacz')
                 audio_file_2 = self.cache.getFromCache('ale wystąpił problem techniczny z tą operacją')
                 audio_sentance = '%s %s' % (audio_file_1, audio_file_2)
@@ -211,7 +220,16 @@ class IvonaSpeaker:
     def play(self, filename):      
         #os.system("aplay -D plughw:1,0 " + filename)
         #os.system("aplay -D %s %s" % (self.snd_dev, filename))
-        os.system("mpg123 -q --audiodevice=%s %s" % (self.snd_dev, filename))
+        if not filename:
+          self.logger.error("play command failed! audo file name is empty" % cmd)
+          return
+
+        if 'mp3' in filename:
+          cmd = "mpg123 -q --audiodevice=%s %s" % (self.snd_dev, filename)
+        else:
+          cmd = "aplay -D %s %s" % (self.snd_dev, filename)
+        self.logger.debug("play cmd: %s" % cmd)
+        os.system(cmd)
 
 class DummySpeaker:
 

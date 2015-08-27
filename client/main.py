@@ -83,6 +83,7 @@ if __name__ == "__main__":
         stt_engine_type = "sphinx"
     
     log.debug("command line args: %s" % args)
+    
     try:
       if args.no_speaker:
         spk = speaker.DummySpeaker(log, profile)
@@ -99,7 +100,7 @@ if __name__ == "__main__":
         passiveSTT = None
         activeSTT  = None
 
-      mic = Mic(spk, passiveSTT, activeSTT, log)
+      mic = Mic(spk, passiveSTT, activeSTT, log, profile['snd_dev'], input_device_index=profile['input_device_index'])      
     except:
         log.critical( "fatal error creating mic", exc_info=True)
         exit(1)

@@ -9,6 +9,7 @@ import sys
 from wave import open as open_audio
 import audioop
 import pyaudio
+
 import re
 import time
 import str_formater
@@ -36,8 +37,9 @@ class Mic:
         self.THRESHOLD_MULTIPLIER = 1.8
         #RATE = 16000
         self.audio = pyaudio.PyAudio()
+        self.FORMAT = pyaudio.paInt16
         self.RATE = 48000
-        self.CHUNK = 8192 #1024
+        self.CHUNK = 8096 #1024
         self.CHANNELS = 1
 
     def getScore(self, data):
@@ -49,13 +51,14 @@ class Mic:
         self.logger.debug("fetchThreshold")
 
         # number of seconds to allow to establish threshold
-        THRESHOLD_TIME = 1
+        THRESHOLD_TIME = 2
+        LAST_SAMPLES_NO = 20 # about 5 per sec
 
         # prepare recording stream
         #self.audio = pyaudio.PyAudio()
         #defaultSampleRate = self.audio.get_device_info_by_index(0)['defaultSampleRate']
         #self.logger.debug("defaultSampleRate: %s" % repr(defaultSampleRate))
-        stream = self.audio.open(format=pyaudio.paInt16,
+        stream = self.audio.open(format=self.FORMAT,
                             channels=self.CHANNELS,
                             rate=self.RATE,
                             input=True,
@@ -68,7 +71,7 @@ class Mic:
         # stores the lastN score values
         #lastN = [i for i in range(20)]
         lastN = []
-        self.logger.debug("lastN: %s" % repr(lastN)) 
+        #self.logger.debug("lastN: %s" % repr(lastN)) 
 
         # calculate the long run average, and thereby the proper threshold
         for i in range(0, self.RATE / self.CHUNK * THRESHOLD_TIME):
@@ -77,7 +80,7 @@ class Mic:
             frames.append(data)
 
             # save this data point as a score
-            if len(lastN) > 20:
+            if len(lastN) >= LAST_SAMPLES_NO:
               lastN.pop(0)
             score = round(self.getScore(data) * 100.0) / 100.0
 
@@ -126,7 +129,7 @@ class Mic:
         #RATE = 44100
         #CHUNK = 512
         LISTEN_TIME = 5
-        LAST_SAMPLES_NO = 3
+        LAST_SAMPLES_NO = 10
 
         # check if no threshold provided
         if THRESHOLD == None:
@@ -139,7 +142,7 @@ class Mic:
         #audio = pyaudio.PyAudio()
         #defaultSampleRate = self.audio.get_device_info_by_index(0)['defaultSampleRate']
         #self.logger.debug("defaultSampleRate: %s" % repr(defaultSampleRate))
-        stream = self.audio.open(format=pyaudio.paInt16,
+        stream = self.audio.open(format=self.FORMAT,
                             channels=self.CHANNELS,
                             input_device_index=0,
                             rate=self.RATE,
@@ -150,7 +153,7 @@ class Mic:
         # increasing the range # results in longer pause after command generation
         #lastN = [THRESHOLD * 1.2 for i in range(30)]
         lastN = []
-        self.logger.debug("lastN: %s" % repr(lastN)) 
+        #self.logger.debug("lastN: %s" % repr(lastN)) 
 
         for i in range(0, self.RATE / self.CHUNK * LISTEN_TIME):
 
@@ -181,7 +184,7 @@ class Mic:
         #self.audio.terminate()
         write_frames = open_audio(AUDIO_FILE, 'wb')
         write_frames.setnchannels(self.CHANNELS)
-        write_frames.setsampwidth(self.audio.get_sample_size(pyaudio.paInt16))
+        write_frames.setsampwidth(self.audio.get_sample_size(self.FORMAT))
         write_frames.setframerate(self.RATE)
         write_frames.writeframes(''.join(frames))
         write_frames.close()
@@ -213,4 +216,4 @@ if __name__ == "__main__":
     
     mic = Mic(logger, snd_dev)
     f = mic.activeListen(THRESHOLD=None, RATE=48000, CHUNK=8096)
-    mic.play(f)
+    mic.play('active.wav')

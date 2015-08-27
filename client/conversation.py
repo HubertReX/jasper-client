@@ -38,10 +38,11 @@ class Conversation(object):
             music_mode.handleForever()
             return
 
-        self.brain.query(text)
+        return self.brain.query(text)
 
     def handleForever(self):
         """Delegates user input to the handling function when activated."""
+        initial_threshold = self.mic.fetchThreshold(RATE=48000, CHUNK=8192, THRESHOLD_TIME=4, AVERAGE_TIME=4)
         repeat = True
         while repeat:
 
@@ -50,7 +51,7 @@ class Conversation(object):
             for notif in notifications:
                 notif = str_formater.unicodeToUTF8(notif, self.logger)
                 self.logger.info("Got new notification: %s" % notif )
-                self.mic.say(notif)
+                #self.mic.say(notif)
 
             try:
                 threshold, transcribed = self.mic.passiveListen(self.persona)
@@ -59,9 +60,13 @@ class Conversation(object):
                 continue
 
             if threshold:
-                input = self.mic.activeListen(threshold)
-                input = str_formater.unicodeToUTF8(input, self.logger)
-                self.logger.debug("got threshold %s and input %s" % (threshold, input))
+                if transcribed:
+                  input = transcribed
+                else:
+                  input = self.mic.activeListen(initial_threshold, RATE=48000, CHUNK=8196, LISTEN_TIME=6, AVERAGE_TIME=5)
+                  input = str_formater.unicodeToUTF8(input, self.logger)
+
+                self.logger.debug("got input %s" % (input))
                 if input:
                     if any(x in input.upper() for x in ["KONIEC"]):
                       repeat = False
@@ -70,16 +75,17 @@ class Conversation(object):
                     #elif any(x in input.upper().replace('ł','Ł') for x in ["PRZEŁADUJ"]):
                     elif any(x in upperUTF8(input) for x in ["PRZEŁADUJ"]):
                       self.brain.reload_modules()
+                    elif any(x in upperUTF8(input) for x in ["ECHO"]):
+                            self.mic.say(input)
+                            #self.mic.play(input)
                     else:
                       self.delegateInput(input)
                 else:
                     self.mic.say("Powtórz proszę.")
-            else:
-              if any(x in transcribed.upper() for x in ["KONIEC"]):
-                      repeat = False
-                      self.logger.info("Quiting after voice request")
-                      self.mic.say("Kończę pracę. Do usłyszenia.") 
-              elif any(x in upperUTF8(transcribed) for x in ["PRZEŁADUJ"]):
-                      self.brain.reload_modules()
-              elif any(x in upperUTF8(transcribed) for x in ["ECHO"]):
-                      self.mic.say(transcribed)
+#            else:
+#              if any(x in transcribed.upper() for x in ["KONIEC"]):
+#                      repeat = False
+#                      self.logger.info("Quiting after voice request")
+#                      self.mic.say("Kończę pracę. Do usłyszenia.") 
+#              elif any(x in upperUTF8(transcribed) for x in ["PRZEŁADUJ"]):
+#                      self.brain.reload_modules()
