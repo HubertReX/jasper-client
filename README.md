@@ -7,6 +7,17 @@ Client code for the Jasper voice computing platform. Jasper is an open source pl
 
 Learn more at [jasperproject.github.io](http://jasperproject.github.io/), where we have assembly and installation instructions, as well as extensive documentation. For the relevant disk image, please visit [SourceForge](http://sourceforge.net/projects/jasperproject/).
 
+## How is this fork different from original project
+
+First of all - many thanks for original authors of this project - great job!
+
+This fork introduces following changes:
+- full translation and location to Polish (and there for it depends on google voice recognition and google or ivona speach synthesis)
+- full support for UTF-8 
+- cache db and phrases audio files to limit the use of test-to-speech api
+- xbmc/kodi module to control music, videos and more
+- home automation Module - integration with my other github project for smart homes using: Z-Wav, Flask, Ago Control, nc plus NBox set-top-box
+
 ## Contributing
 
 If you'd like to contribute to Jasper, please read through our **[Contributing Guide](https://github.com/jasperproject/jasper-client/blob/master/CONTRIBUTING.md)**, which outlines the philosophies to preserve, tests to run, and more. We highly recommend reading through this guide before writing any code.
