@@ -90,7 +90,8 @@ def handle(text, mic, profile, logger, modules):
             mic.say("Aby wysłuchać szczegółowych wyjaśnień podaj nazwę interesującego cie tematu.")
             mic.say("Powiedz wszystkie tematy aby poznać listę wszystkich tematów.")
             mic.say("Aby przerwać powiedz zakończ.")
-            subject = mic.activeListen(1)
+            subject = mic.activeListen()
+
 
         if subject == "zakończ":
             mic.say("Kończę interaktywny samouczek.")
@@ -119,7 +120,7 @@ def handle(text, mic, profile, logger, modules):
                     for t in sorted(help["topics"].keys()):
                         mic.say(t)
                     mic.say("By przerwać powiedz zakończ.")
-                    topic = mic.activeListen(1)
+                    topic = mic.activeListen()
 
                     if topic == "zakończ":
                         break

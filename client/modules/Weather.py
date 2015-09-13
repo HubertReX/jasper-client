@@ -6,6 +6,9 @@ from app_utils import getTimezone
 from semantic.dates import DateService
 import arrow
 import str_formater
+import logging
+import jasperLogger
+import yaml
 
 WORDS = ["POGODA", "PROGNOZA", "DZISIAJ", "JUTRO"]
 HELP  = {"name": "pogoda",
@@ -38,11 +41,11 @@ def parseDirections(text):
     }
     output = []
     for w in text:
-      print w
-      print words.get(w, '')
+      #print w
+      #print words.get(w, '')
       output.append(words.get(w,''))
     #output = [words[w] for w in list(text)]
-    print output
+    #print output
     return ' '.join(output)
 
 def parseDayOfWeek(text, logger):
@@ -69,14 +72,17 @@ def replaceAcronyms(text):
         'Cloudy':    'pochmurnie',
         'Scattered': 'zanikające',
         'Clouds':    'zachmurzenie',
+        'Clouds':    'zachmurzenie',
+        'Rain Showers':'mrzawka',
+        'Light':     'lekka',
     }
-    acronyms = re.findall(r'\b(North|South|East|West|Clear|Mostly|Partly|Cloudy|Scattered|Clouds)\b', text)
-    print acronyms
+    acronyms = re.findall(r'\b(North|South|East|West|Clear|Mostly|Partly|Cloudy|Scattered|Clouds|Light|Rain Showers)\b', text)
+    #print acronyms
     for w in acronyms:
         if words.has_key(w):
           text = text.replace(w, words[w])
-    text = re.sub(r'(\d+)[ ]?&deg;','\g<1>°', text)
-    text = re.sub(r'(\d+)[ ]?&#176;','\g<1>°', text)
+    text = re.sub(r'(\d+)[ ]?&deg;','\g<1> stopni', text)
+    text = re.sub(r'(\d+)[ ]?&#176;','\g<1> stopni', text)
     #text = re.sub(r'(\d+)[ ]?&deg;','\g<1> stopni', text)
     #text = re.sub(r'(\d+)[ ]?°',    '\g<1> stopni', text)
     text = re.sub(r'Maks\.:', 'maksymalnie ', text)
@@ -128,7 +134,7 @@ def handle(text, mic, profile, logger, modules):
             "Wybacz, ale nie mogę podać prognozy pogody. Wprowadź proszę w ustawieniach miasto.")
         return
     mic.say("Pobieram prognozę pogody...")
-    str_formater.checkFormat(text, logger)
+    #str_formater.checkFormat(text, logger)
     text = str_formater.unicodeToUTF8(text, logger)
     tz = getTimezone(profile)
 
@@ -165,19 +171,22 @@ def handle(text, mic, profile, logger, modules):
     else:
         date_keyword = weekday
 
-    logger.debug("date_keyword %s weekday %s" % (date_keyword, weekday))
+    #logger.debug("date_keyword %s weekday %s" % (date_keyword, weekday))
     forecast = getForecast(profile)
     output = ""
     #weekday = 'niedziela'
+    
+    #for entry in forecast:
+    #  print entry['title']
     for entry in forecast:
         try:
             entry = str_formater.unicodeToUTF8(entry, logger)
             #str_formater.checkFormat(entry['title'].split()[0].strip().lower(), logger)
             date_desc = entry['title'].split()[0].strip().lower().replace('Ś','ś')
-            logger.debug('date_desc %s' % date_desc)
+            #logger.debug('date_desc %s' % date_desc)
             if date_desc == 'prognoza': #For global forecasts
               date_desc = entry['title'].split()[2].strip().lower().replace('Ś','ś')
-              logger.debug('date_desc %s' % date_desc)
+              #logger.debug('date_desc %s' % date_desc)
               weather_desc = entry['summary_detail']['value']
 
             elif date_desc == 'obecne': #For first item of global forecasts
@@ -210,3 +219,17 @@ def isValid(text):
         text -- user-input, typically transcribed speech
     """
     return bool(re.search(r'\b(pogoda|temperatura|prognoza)\b', text, re.IGNORECASE))
+
+class Mic:
+    def say(self, msg):
+        print "say:", msg
+
+if __name__ == "__main__":
+    m = Mic()
+    l = jasperLogger.jasperLogger(level=logging.DEBUG, logFile='persistentCache.log', console=True)
+    logger = l.getLogger()
+    profile = yaml.safe_load(open("/home/osmc/jasper/client/profile.yml", "r"))
+
+    #t = "odtwarzaj wykonawcę kult"
+    t = "prognoza pogody na środę"
+    handle(t, m, profile, logger, None)

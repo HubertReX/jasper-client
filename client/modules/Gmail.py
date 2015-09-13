@@ -149,4 +149,4 @@ def isValid(text):
         Arguments:
         text -- user-input, typically transcribed speech
     """
-    return bool(re.search(r'\b(email|mejle|mail|maile|imeil)\b', text, re.IGNORECASE))
+    return bool(re.search(r'\b(email|mejle|mail|maile|imeil|poczta)\b', text, re.IGNORECASE))

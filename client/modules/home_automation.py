@@ -8,9 +8,9 @@ from time import sleep
 WORDS = ["OTWÓRZ", "ZAMKNIJ", "WŁĄCZ", "WYŁĄCZ", "URUCHOM", "ZMIEŃ", "PRZEŁĄCZ", "DEKODER"]
 
 
-HELP  = {"name": "Inteligentny dom",
+HELP  = {"name": "dom",
          "description": "Zestaw kommend do sterowania oświetleniem, roletami i urządzeniami RTV.",
-         "samples": ["włącz głośniki", "zamknij rolety", "włącz telewizor", "przełącz źródło na dekoder"],
+         "samples": ["włącz głośniki", "zamknij rolety", "włącz telewizor", "przełącz źródło na dekoder", "szukaj nagranie kraina lodu", "szukaj program fakty"],
          "topics": {"rolety":  "powiedz zamknij lub otwórz rolety,| ewentulanie roletę"+
                                "upewnij się czy nic nie blokuje rolet przed zamknięciem.",
                     "głośniki": "powiedz włącz lub wyłącz głośniki,| "+
@@ -20,7 +20,7 @@ HELP  = {"name": "Inteligentny dom",
                     "źródło": "powiedz zmień lub przełącz następnie źródło na:| "+
                               "HDMI jeden lub malinkę aby telewizor wyświetlił odtwarzacz multimedialny KODI.| "+
                               "HDMI dwa lub dekoder lub NC plus aby telewizor wyświetlił obraz z dekodera NC plus.",
-                    "HTPC": "Powiedz włącz lub wyłącz HTPC aby uruchomić komputer z multimediam w mens room.| "+
+                    "htpc": "Powiedz włącz lub wyłącz HTPC aby uruchomić komputer z multimediam w mens room.| "+
                             "Komputer będzie jedynie usypiany lub wzbudzany co zajmie tylko kilka sekund."+
                             "Bez włączenia HTPC większość filmów i zdjęć| będzie niedostępna w odtwarzaczu multimedialnym KODI.",
                     "uwagi ogólne": "...,|"+
@@ -64,9 +64,10 @@ def sendCommands(commands, mic, logger):
       
       for command in commands:
         url = server % (command.fun, command.param, command.val)
-        logger.debug('home automation will responde with %s' % url)
+        
         try:
           if command.param <> "":
+            logger.debug('home automation will responde with %s' % url)
             res = urllib.urlopen(url).read()
             #r = json.loads(res)
             #if r.has_key('result'):
@@ -74,14 +75,23 @@ def sendCommands(commands, mic, logger):
             #  if result:
             #    mic.say(result)
             #logger.debug('raw response form flask serwer: %s' % res)
-            mic.say('okey')
-          sleep(0.300)
+            #mic.say('okey')
+            try:
+              i = int(command.param)
+            except:
+              i = -1
+
+            if i >= 0 and command.fun == 'NCPLUS':
+              sleep(0.250)
+            else:
+              sleep(0.450)
+          else:
+            logger.debug('home automation will wait for 0.4 sec')
+            sleep(0.450)
         except:
           logger.error("fatal error sending command to flask server", exc_info=True)
           mic.say("Wybacz, ale wystąpił problem techniczny.")
           break
-
-
 
 def handle(text, mic, profile, logger, modules):
     """
@@ -100,7 +110,9 @@ def handle(text, mic, profile, logger, modules):
     command  = jasperCommand()
     commands = []
     logger.debug('home automation got cmd %s' % text)
-
+    
+    numbers = app_utils.getNumbers(text)
+    
     if 'włącz' in text or 'otwórz' in text or 'uruchom' in text:
         command.val = 'on'
     if 'wyłącz' in text or 'zamknij' in text:
@@ -125,19 +137,167 @@ def handle(text, mic, profile, logger, modules):
    
     # change TV source to malinka, dekoder or htpc
     if 'źródło' in text :
-        if 'hdmi 3' in text or 'hdmi trzy' in text or 'malinka' in text or 'malinkę' in text or 'kodi' in text or 'xbmc' in text:
-            command.fun = 'TV'
-            command.param = 'HDMI1'
-            commands.append(command)
-        if 'hdmi 2' in text or 'hdmi dwa' in text or 'dekoder' in text or 'nc plus' in text:
+        if 'hdmi 2' in text or 'hdmi dwa' in text or 'malinka' in text or 'malinkę' in text or 'kodi' in text or 'xbmc' in text:
             command.fun = 'TV'
             command.param = 'HDMI2'
             commands.append(command)
+        if 'hdmi 3' in text or 'hdmi trzy' in text or 'dekoder' in text or 'nc plus' in text:
+            command.fun = 'TV'
+            command.param = 'HDMI3'
+            commands.append(command)
 #        if 'hdmi 3' in text or 'hdmi trzy' in text or 'htpc' in text :
 #            fun = 'TV'
-#            param = 'HDMI3'
+#            param = 'HDMI3'    
+    elif 'szukaj' in text:
+      command.fun = 'NCPLUS'
+      phrases = text.split()
+      if 'nagranie' in text:
+        pos = phrases.index('nagranie')
+        phrase = ' '.join(phrases[pos+1:])
+        print phrase
+        command.param = 'LIST'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = '0'
+        commands.append(command)
+      elif 'program' in text:
+        pos = phrases.index('program')
+        phrase = ' '.join(phrases[pos+1:])
+        print phrase
+        command.param = 'EPG'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'OK'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'OK'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = ''
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'DOWN'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'DOWN'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'DOWN'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'DOWN'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'OK'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = ''
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'DOWN'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'DOWN'
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = ''
+        commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'RIGHT'
+        commands.append(command)
+
+      sms = app_utils.textToSMS(phrase)
+      print sms
+      for code in sms:
+        command = jasperCommand(command.fun)
+        command.param = str(code)
+        commands.append(command)
+        
+      command.param = 'OK'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+
+    elif ('program' in text or 'kanał' in text) and len(numbers) > 0:
+        command.fun = 'NCPLUS'
+        channel = str(numbers[0])
+        for digit in channel:
+          command = jasperCommand(command.fun)
+          command.param = digit
+          commands.append(command)
+        command = jasperCommand(command.fun)
+        command.param = 'OK'
+        commands.append(command)
+    elif 'kanał tvn' in text:
+      command.fun = 'NCPLUS'
+      command.param = '1'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = 'OK'
+      commands.append(command)
+    elif 'kanał tvn 24' in text:
+      command.fun = 'NCPLUS'
+      command.param = '6'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = 'OK'
+      commands.append(command)
+    elif 'kanał hbo' in text:
+      command.fun = 'NCPLUS'
+      command.param = '5'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = '0'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = 'OK'
+      commands.append(command)
+    elif 'kanał canal plus' in text or 'kanał kanał plus' in text or 'kanał kanal plus' in text:
+      command.fun = 'NCPLUS'
+      command.param = '3'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = '0'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = 'OK'
+      commands.append(command)
+    elif 'kanał mini mini' in text:
+      command.fun = 'NCPLUS'
+      command.param = '9'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = '0'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = 'OK'
+      commands.append(command)
+    elif 'kanał cartoon network' in text:
+      command.fun = 'NCPLUS'
+      command.param = '1'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = '0'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = '1'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = 'OK'
+      commands.append(command)
+    elif 'kanał ale kino' in text:
+      command.fun = 'NCPLUS'
+      command.param = '4'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = '1'
+      commands.append(command)
+      command = jasperCommand(command.fun)
+      command.param = 'OK'
+      commands.append(command)
+    
     else:
-    # toggle power in dekoder or htpc
+    
+        # all other set-top box commands
         if 'dekoder' in text :
             command.fun = 'NCPLUS'
             numbers = app_utils.getNumbers(text)
@@ -149,7 +309,7 @@ def handle(text, mic, profile, logger, modules):
             if 'włącz dekoder' in text or 'uruchom dekoder' in text or 'wyłącz dekoder' in text:
               command.param = 'power'
               commands.append(command)
-            elif 'n' in text or 'kanały' in text :
+            elif ' n ' in text or 'kanały' in text :
               command.param = 'N'
               commands.append(command)
             elif 'epg' in text or 'program' in text :
@@ -164,51 +324,6 @@ def handle(text, mic, profile, logger, modules):
             elif 'vod plus' in text or 'vod net' in text:
               command.param = 'BLUE'
               commands.append(command)
-            elif 'szukaj' in text:
-              phrases = text.split()
-              pos = phrases.index('szukaj')
-              phrase = ' '.join(phrases[pos:])
-              command.param = 'EPG'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'DOWN'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'DOWN'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'DOWN'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'DOWN'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'DOWN'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'DOWN'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'RIGHT'
-              commands.append(command)
-              sms = app_utils.textToSMS(phrase)
-              for code in sms:
-                command = jasperCommand(command.fun)
-                command.param = str(code)
-                commands.append(command)
-                
             elif 'radio' in text:
               command.param = 'RADIO'
               commands.append(command)
@@ -279,54 +394,6 @@ def handle(text, mic, profile, logger, modules):
             elif 'poprzedni kanał' in text or 'poprzedni program' in text:
               command.param = 'PR_M'
               commands.append(command)
-            elif ('program' in text or 'kanał' in text) and len(numbers) > 0:
-              channel = str(numbers[0])
-              for digit in channel:
-                command = jasperCommand(command.fun)
-                command.param = digit
-                commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-            elif 'kanał tvn' in text:
-              command.param = '1'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-            elif 'kanał tvn 24' in text:
-              command.param = '6'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-            elif 'kanał hbo' in text:
-              command.param = '5'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = '0'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-            elif 'kanał canal plus' in text or 'kanał kanał plus' in text or 'kanał kanal plus' in text:
-              command.param = '3'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = '0'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
-            elif 'kanał mini mini' in text:
-              command.param = '9'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = '0'
-              commands.append(command)
-              command = jasperCommand(command.fun)
-              command.param = 'OK'
-              commands.append(command)
             else:
               #unknown key for nc plus
               command.fun = None
@@ -355,4 +422,4 @@ def isValid(text):
         text -- user-input, typically transcribed speech
     """
     #print('is it home automation command: %s' % text.decode('utf-8'))
-    return bool(re.search(r'\b(włącz|wyłącz|zamknij|otwórz|przełącz|zmień|uruchom|dekoder)\b', text, re.IGNORECASE))
+    return bool(re.search(r'\b(włącz|wyłącz|zamknij|otwórz|przełącz|zmień|uruchom|dekoder|szukaj nagranie|szukaj program)\b', text, re.IGNORECASE))

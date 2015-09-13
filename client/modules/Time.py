@@ -2,7 +2,7 @@
 # a może teraz?
 import datetime
 import re
-from app_utils import getTimezone
+from app_utils import *
 from semantic.dates import DateService
 
 WORDS = ["CZAS", "GODZINA", "GODZINĘ"]
@@ -20,8 +20,9 @@ def handle(text, mic, profile, logger, modules):
 
     tz = getTimezone(profile)
     now = datetime.datetime.now(tz=tz)
-    service = DateService()
-    response = service.convertTime(now)
+    #service = DateService()
+    #response = service.convertTime(now)
+    response = format_hour(now)
     mic.say("Teraz jest godzina|~ %s." % response)
 
 

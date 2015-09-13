@@ -12,6 +12,7 @@ import pyaudio
 import alteration
 import re
 import time
+import datetime
 import numpy
 import analyse
 import math
@@ -26,6 +27,8 @@ import speaker
 import jasperLogger
 import str_formater
 import logging
+
+from modules.app_utils import *
 
 # Dummy Alsa error handler
 #http://stackoverflow.com/questions/7088672/pyaudio-working-but-spits-out-error-messages-each-time
@@ -48,6 +51,7 @@ def noalsaerr():
 
 
 
+##########################################################################################
 class DrawVolumeBar():
 
     def __init__(self, width=None, height=None):
@@ -88,9 +92,17 @@ class DrawVolumeBar():
     def color(self, this_color, string):
         return "\033[" + str(this_color) + "m" + string + "\033[0m"
     
+    def save(self):
+        #Saves cursor position'
+        print '\033[s'
+    
+    def restore(self):
+        'Restores cursor position'
+        print '\033[u'
+
     def clear(self):
         """Clear screen, return cursor to top left"""
-        sys.stdout.write('\033[2J')
+        #sys.stdout.write('\033[2J')
         sys.stdout.write('\033[H')
         sys.stdout.flush()
 
@@ -99,8 +111,11 @@ class DrawVolumeBar():
 
     def progress(self, current, total, pitch, suffix):
         #COLS = struct.unpack('hh',  fcntl.ioctl(sys.stdout, termios.TIOCGWINSZ, '1234'))[1]
+        current = abs(current)
+        total = abs(total)
+        pitch = abs(pitch)
 
-        prefix = '%4d / %4d' % (current, total)
+        prefix = '%3d / %3d' % (current, total)
         #suffix = '%4.1f s' % (12.1)
         bar_start = ' ['
         bar_end = '] '
@@ -128,8 +143,14 @@ class DrawVolumeBar():
           bar = self.color(32, u"\u2588" * amount) + self.color(31, '|' + u"\u2588" * over_pitch) + ' ' * remain
         return self.bold(prefix) + bar_start + bar + bar_end + self.bold(suffix)
 
-    def draw_bar(self, elements, header, pitch, frames_pers_sec, cut_off=None, split=None):
+    def draw_bar(self, elements, header, pitch, frames_pers_sec, cut_off=None, split=None, verbose=False):
+        if not verbose:
+          print header
+          return
+
         self.width, self.height = self.getTerminalSize()
+        self.height = 10
+        #self.save()
         self.clear()
         sys.stdout.write(header + '\n')
         #samps = numpy.fromstring(data, dtype=numpy.int16)
@@ -143,7 +164,7 @@ class DrawVolumeBar():
           sys.stdout.write(offset)
           last_n = len(elements)
         else:
-          last_n = self.height - 4 
+          last_n = self.height - 4
         
         i      = last_n
         sec    = 999.0 
@@ -172,6 +193,7 @@ class DrawVolumeBar():
           #suffix = '%4.1f s' % ( math.ceil(float(i) / frames_pers_sec))
           sys.stdout.write(self.progress(el, max_el, pitch, suffix) + '\n')
           sys.stdout.flush()         
+        #self.restore()
 
     
     def get_sample_data(self):
@@ -199,10 +221,11 @@ class DrawVolumeBar():
         return elements
 
 
+##########################################################################################
 class Mic:
 
 
-    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger, snd_dev, input_device_index=0):
+    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger, profile):
         """
         Initiates the pocketsphinx instance.
 
@@ -211,38 +234,61 @@ class Mic:
         passive_stt_engine -- performs STT while Jasper is in passive listen mode
         acive_stt_engine -- performs STT while Jasper is in active listen mode
         """
+        if not profile:
+          print "WARNING: got empty profile - using default values"
+          profile = {}
+        self.profile            = profile
         self.speaker            = speaker
         self.passive_stt_engine = passive_stt_engine
         self.active_stt_engine  = active_stt_engine
         self.logger             = logger
-        self.snd_dev            = snd_dev
+        self.PERSONA            = self.profile.get('persona', 'Jasper')
+        
         self.volume_bar         = DrawVolumeBar()
         #self.THRESHOLD = 0
         # TODO: Consolidate variables from the next three functions
         #self.THRESHOLD_MULTIPLIER = 1.8 # for PSM
-        self.THRESHOLD_MULTIPLIER = 1.05 # 3 dB for dB
+        self.THRESHOLD_MULTIPLIER = 1.4 # 3 dB for dB
         #RATE = 16000
         #with noalsaerr():
         self.audio         = pyaudio.PyAudio()
         self.THRESHOLD     = None
-        self.DEVICE_INDEX  = input_device_index
+        self.INPUT_DEVICE  = self.profile.get('input_device_name', 'hw:2,0')
         self.FORMAT        = pyaudio.paInt16
-        self.RATE          = 48000
-        self.CHUNK         = 8096 #1024
+        self.RATE          = self.set_default_sample_rate()
+        self.CHUNK         = 8192 #1024
         self.CHANNELS      = 1
+
+    def __del__(self):
+        if self.audio:
+          self.audio.terminate()
+
+    def set_default_sample_rate(self):
+        cnt = self.audio.get_device_count()
+
+        for el in range(cnt):
+          info = self.audio.get_device_info_by_index(el)
+          print "self.INPUT_DEVICE: %s" % self.INPUT_DEVICE
+          if self.INPUT_DEVICE in info["name"]:
+            self.INPUT_DEVICE_IDX = el
+            print "self.INPUT_DEVICE_IDX: %d defaultSampleRate: %d" % (self.INPUT_DEVICE_IDX, int(info['defaultSampleRate']))
+            return int(info['defaultSampleRate'])
+          
+        return 44100
 
     def find_input_device(self):
         device_index = None            
         for i in range( self.audio.get_device_count() ):     
             devinfo = self.audio.get_device_info_by_index(i)   
             print( "Device %d: %s"%(i,devinfo["name"]) )
-            if i == self.DEVICE_INDEX:
-                print "#" * 12
-                print devinfo
+            if self.INPUT_DEVICE in devinfo["name"]:
+                print "#" * 40
+                for key in devinfo.keys():
+                  print "  %s: %s" % (key, str(devinfo[key]))
 
-            for keyword in ["mic", "input"]:
-                if keyword in devinfo["name"].lower():
-                    print( "Found an input: device %d - %s"%(i,devinfo["name"]) )
+            for keyword in ["mic", "input"] :
+                if devinfo["maxInputChannels"] > 0:
+                    print( "Found an input: device %d - %s" % (i, devinfo["name"]) )
                     device_index = i
                     return device_index
 
@@ -266,23 +312,24 @@ class Mic:
     def get_dB(self, data):
         return 20.0 * numpy.log10(data)
 
-    def fetchThreshold(self, RATE=48000, CHUNK=8096, THRESHOLD_TIME=1, AVERAGE_TIME=None):
+    def fetchThreshold(self, RATE=48000, CHUNK=8192, THRESHOLD_TIME=2, AVERAGE_TIME=None):
      
-        print "rate %d chunk %d THRESHOLD_TIME %d AVERAGE_TIME %s" % (RATE, CHUNK, THRESHOLD_TIME, repr(AVERAGE_TIME))
+        print "rate %d chunk %d THRESHOLD_TIME %d AVERAGE_TIME %s" % (self.RATE, CHUNK, THRESHOLD_TIME, repr(AVERAGE_TIME))
         # number of seconds to allow to establish threshold
         #THRESHOLD_TIME  = 1  # in seconds
-        
+        THRESHOLD = None
         if not AVERAGE_TIME:
           AVERAGE_TIME = THRESHOLD_TIME
-        LAST_SAMPLES_NO = int(AVERAGE_TIME * (RATE / CHUNK))
-
+        LAST_SAMPLES_NO = int(AVERAGE_TIME * (self.RATE / CHUNK))
+        print "self.CHANNELS:", self.CHANNELS
+        print "self.INPUT_DEVICE_IDX:", self.INPUT_DEVICE_IDX
         # prepare recording stream
-        stream = self.audio.open(format=self.FORMAT,
-                                 channels=self.CHANNELS,
-                                 input_device_index=self.DEVICE_INDEX,
-                                 rate=RATE,
-                                 input=True,
-                                 frames_per_buffer=CHUNK)
+        stream = self.audio.open(format             = self.FORMAT,
+                                 channels           = self.CHANNELS,
+                                 input_device_index = self.INPUT_DEVICE_IDX,
+                                 rate               = self.RATE,
+                                 input              = True,
+                                 frames_per_buffer  = CHUNK)
 
         # stores the audio data
         frames = []
@@ -292,10 +339,11 @@ class Mic:
         #lastN = [i for i in range(20)]
         lastN = []
         allN  = []
+        gotKeyboardInterrupt = False
         #self.logger.debug("lastN: %s" % repr(lastN)) 
 
         # calculate the long run average, and thereby the proper threshold
-        for i in range(0, RATE / CHUNK * THRESHOLD_TIME):
+        for i in range(0, self.RATE / CHUNK * THRESHOLD_TIME):
           
           try:
             data = stream.read(CHUNK)
@@ -327,19 +375,21 @@ class Mic:
 
             header = '[ Current: %10.2f | Average: %10.2f | Threshold: %10.2f | Cut off: %10.2f | Average time: %4d s ]\n' % (score, average, THRESHOLD, cut_off, AVERAGE_TIME)
 
-            self.volume_bar.draw_bar(allN, header, THRESHOLD, RATE / CHUNK, cut_off, split)
+            self.volume_bar.draw_bar(allN, header, THRESHOLD, self.RATE / CHUNK, cut_off, split, verbose=True)
           except KeyboardInterrupt:
             print 'got break'
+            gotKeyboardInterrupt = True
             break
 
         stream.stop_stream()
         stream.close()
 
-
+        if gotKeyboardInterrupt:
+          raise KeyboardInterrupt
         return THRESHOLD
     
 
-    def passiveListen(self, PERSONA):
+    def passiveListen(self):
         """
         Listens for PERSONA in everyday sound. Times out after LISTEN_TIME, so needs to be
         restarted.
@@ -354,8 +404,8 @@ class Mic:
         except KeyboardInterrupt:
           return (True, "koniec")
 
-        self.logger.info("Got %s; is waiting for %s" % (text, PERSONA))
-        if text.upper() == PERSONA or text == "":
+        self.logger.info("Got %s; is waiting for %s" % (text, self.PERSONA))
+        if text.upper() == self.PERSONA.upper() or text == "":
           return (True, None)
         else:
           return (True, text)
@@ -368,22 +418,47 @@ class Mic:
     def extractData(self, data):
         return numpy.fromstring(data, numpy.int16)
 
-    def recordAudio(self, THRESHOLD=None, LISTEN=True, MUSIC=False, RATE=48000, CHUNK=8096, LISTEN_TIME=5, AVERAGE_TIME=None):
+    def isAboveThreshold(self, lastN, THRESHOLD):
+        size = len(lastN)
+        if size < 3:
+          return False
+
+        if lastN[-3] < THRESHOLD and lastN[-2] >= THRESHOLD and lastN[-1] >= THRESHOLD:
+          return True
+        else:
+          return False
+
+    def isBelowThreshold(self, lastN, THRESHOLD):
+        size = len(lastN)
+        if size < 4:
+          return False
+
+        if lastN[-4] < THRESHOLD and lastN[-3] < THRESHOLD and lastN[-2] < THRESHOLD and lastN[-1] < THRESHOLD:
+          return True
+        else:
+          return False
+
+    def recordAudio(self, THRESHOLD=None, LISTEN=True, MUSIC=False, RATE=48000, CHUNK=8096, LISTEN_TIME=5, RECORD_TIME=None, AVERAGE_TIME=None):
         """
             Records until a second of silence or times out after 12 seconds
         """
 
         AUDIO_FILE = "active.wav"
 
-        self.RATE  = RATE
+        #self.RATE  = RATE
         self.CHUNK = CHUNK
-        THRESHOLD_LIMIT_RATIO = 0.8 
+        # TODO: 0.8 should not be a MAGIC NUMBER!
+        THRESHOLD_LIMIT_RATIO = 1.0 #0.8 
         #RATE = 16000
         
         #LISTEN_TIME = 5
         if not AVERAGE_TIME:
           AVERAGE_TIME = LISTEN_TIME
         LAST_SAMPLES_NO = int(AVERAGE_TIME * (self.RATE / self.CHUNK))
+
+        if not RECORD_TIME:
+          RECORD_TIME = LISTEN_TIME
+        LAST_FRAMES_NO = int(RECORD_TIME * (self.RATE / self.CHUNK))
         #LAST_SAMPLES_NO = 5
 
         # user can request pre-recorded sound
@@ -399,22 +474,24 @@ class Mic:
             self.THRESHOLD = self.fetchThreshold(RATE=RATE, CHUNK=CHUNK)
         else:
           self.THRESHOLD = THRESHOLD
+          
+        self.THRESHOLD = abs(self.THRESHOLD)
         self.logger.debug("THRESHOLD: %6.2f" % self.THRESHOLD)
         limit = round(self.THRESHOLD * THRESHOLD_LIMIT_RATIO * 100.0) / 100.0
         
-        self.speaker.play("../static/audio/beep_hi.mp3")
+        #self.speaker.play("../static/audio/beep_hi.mp3")
         # wait 330 ms in order not to record beep
         #time.sleep(0.33)
         # prepare recording stream
         #audio = pyaudio.PyAudio()
         #defaultSampleRate = audio.get_device_info_by_index(0)['defaultSampleRate']
         #self.logger.debug("defaultSampleRate: %s" % repr(defaultSampleRate))
-        stream = self.audio.open(format=self.FORMAT,
-                                 channels=self.CHANNELS,
-                                 input_device_index=self.DEVICE_INDEX,
-                                 rate=self.RATE,
-                                 input=True,
-                                 frames_per_buffer=self.CHUNK)
+        stream = self.audio.open(format              = self.FORMAT,
+                                 channels            = self.CHANNELS,
+                                 input_device_index  = self.INPUT_DEVICE_IDX,
+                                 rate                = self.RATE,
+                                 input               = True,
+                                 frames_per_buffer   = self.CHUNK)
 
         frames = []
         # increasing the range # results in longer pause after command generation
@@ -423,12 +500,19 @@ class Mic:
         allN  = []
         #self.logger.debug("lastN: %s" % repr(lastN)) 
 
+        wasAbove = False
+        wasBelow = False
+        gotKeyboardInterrupt = False
+
+        #self.volume_bar.save()
 
         for i in range(0, self.RATE / self.CHUNK * LISTEN_TIME):
 
             try:
               data = stream.read(self.CHUNK)
               #data = self.audioFilter(data)
+              if len(frames) >= LAST_FRAMES_NO:
+                frames.pop(0)
               frames.append(data)
               #score = round(self.getScore(data) * 100.0) / 100.0
               score = round(self.to_dB(self.getScore(data)) * 100.0) / 100.0
@@ -440,34 +524,53 @@ class Mic:
               #self.logger.debug("lastN: %s" % repr(lastN)) 
 
               average = sum(lastN) / float(len(lastN))
-              #self.logger.debug("score: %6.2f average: %6.2f THRESHOLD * 0.8: %6.2f" % (score, average, THRESHOLD * 0.8))
+              #self.logger.debug("score: %6.2f average: %6.2f THRESHOLD : %6.2f" % (score, average, THRESHOLD ))
               cut_off = 120.0
               split   = LAST_SAMPLES_NO
-              header = '[ Current: %10.2f | Average: %10.2f | Threshold * 0.8: %10.2f | Cut off: %10.2f | Average time: %4d s  ]\n' % (score, average, limit, cut_off, AVERAGE_TIME)
+              header = '[ Current: %10.2f | Average: %10.2f | Threshold : %10.2f | Cut off: %10.2f | Average time: %4d s | was Above: %d ]\n' % (score, average, limit, cut_off, AVERAGE_TIME, wasAbove)
                             
-              self.volume_bar.draw_bar(allN, header, limit, self.RATE / self.CHUNK, cut_off, split)
+              self.volume_bar.draw_bar(allN, header, limit, self.RATE / self.CHUNK, cut_off, split, verbose=True)
 
-              # TODO: 0.8 should not be a MAGIC NUMBER!
-              if average < limit and len(lastN) == LAST_SAMPLES_NO:
-                  break
+              if not wasAbove and self.isAboveThreshold(lastN, limit):
+                wasAbove = True
+
+              if wasAbove and self.isBelowThreshold(lastN, limit):
+                print "not above threshold any more"
+                wasBelow = True
+                break
+              #if average < limit and len(lastN) == LAST_SAMPLES_NO:
+              #    break
             except IOError:
               self.logger.critical("IOError error reading chunk", exc_info=True)
             except KeyboardInterrupt:
               print 'got break'
+              # temporarly mask exception to clean up
+              gotKeyboardInterrupt = True
               break
 
-        self.speaker.play("../static/audio/beep_lo.mp3")
+        #self.speaker.play("../static/audio/beep_lo.mp3")
 
         # save the audio data
         stream.stop_stream()
         stream.close()
         #self.audio.terminate()
-        write_frames = open_audio(AUDIO_FILE, 'wb')
-        write_frames.setnchannels(self.CHANNELS)
-        write_frames.setsampwidth(self.audio.get_sample_size(self.FORMAT))
-        write_frames.setframerate(self.RATE)
-        write_frames.writeframes(''.join(frames))
-        write_frames.close()
+        if wasBelow:
+          write_frames = open_audio(AUDIO_FILE, 'wb')
+          write_frames.setnchannels(self.CHANNELS)
+          write_frames.setsampwidth(self.audio.get_sample_size(self.FORMAT))
+          write_frames.setframerate(self.RATE)
+          write_frames.writeframes(''.join(frames))
+          write_frames.close()
+        else:
+          #finished after timeout and not threshold crossed - not record audio to file
+          AUDIO_FILE = None
+        
+        #self.volume_bar.restore()
+        
+        if gotKeyboardInterrupt:
+          # all is cleaned up - rerise exception
+          #raise KeyboardInterrupt
+          return None
 
         return AUDIO_FILE
 
@@ -497,7 +600,8 @@ class Mic:
 
         #self.RATE  = RATE
         self.CHUNK = CHUNK
-        THRESHOLD_LIMIT_RATIO = 0.8 
+
+        THRESHOLD_LIMIT_RATIO = 1.0 #0.8 
         #RATE = 16000
         
         #LISTEN_TIME = 5
@@ -556,11 +660,11 @@ class Mic:
               #self.logger.debug("lastN: %s" % repr(lastN)) 
 
               average = sum(lastN) / float(len(lastN))
-              #self.logger.debug("score: %6.2f average: %6.2f THRESHOLD * 0.8: %6.2f" % (score, average, THRESHOLD * 0.8))
+              #self.logger.debug("score: %6.2f average: %6.2f THRESHOLD : %6.2f" % (score, average, THRESHOLD))
               cut_off = 120.0
               #cut_off = 999.0
               split   = LAST_SAMPLES_NO
-              header = '[ Current: %10.2f | Average: %10.2f | Threshold * 0.8: %10.2f | Cut off: %10.2f | Average time: %4d s  ]\n' % (score, average, limit, cut_off, AVERAGE_TIME)
+              header = '[ Current: %10.2f | Average: %10.2f | Threshold : %10.2f | Cut off: %10.2f | Average time: %4d s  ]\n' % (score, average, limit, cut_off, AVERAGE_TIME)
                             
               self.volume_bar.draw_bar(allN, header, limit, self.RATE / self.CHUNK, cut_off, split)
               arr = self.extractData(data)
@@ -582,9 +686,12 @@ class Mic:
 
         return AUDIO_FILE
 
-    def activeListen(self, THRESHOLD=None, LISTEN=True, MUSIC=False, RATE=48000, CHUNK=8192, LISTEN_TIME=5, AVERAGE_TIME=2):
+    def activeListen(self, THRESHOLD=None, LISTEN=True, MUSIC=False, RATE=48000, CHUNK=8192, LISTEN_TIME=5, RECORD_TIME=60, AVERAGE_TIME=2):
                                 
-        audio_file = self.recordAudio(THRESHOLD, LISTEN, MUSIC, RATE, CHUNK, LISTEN_TIME, AVERAGE_TIME)
+        self.speaker.play("../static/audio/beep_hi.mp3")
+        audio_file = self.recordAudio(THRESHOLD=THRESHOLD, LISTEN=LISTEN, MUSIC=MUSIC, RATE=RATE, CHUNK=CHUNK, LISTEN_TIME=LISTEN_TIME, RECORD_TIME=RECORD_TIME, AVERAGE_TIME=AVERAGE_TIME) #RECORD_TIME=60, 
+        self.speaker.play("../static/audio/beep_lo.mp3")
+
         if audio_file:
           return self.active_stt_engine.transcribe(audio_file, MUSIC)
         else:
@@ -598,6 +705,44 @@ class Mic:
         phrase = alteration.clean(phrase)
         self.speaker.say(phrase)
 
+    def continousListen(self):
+        repeat = True
+        os.system('tmux send-keys -t jasper-debug "start\r\n"')
+        while repeat:
+          try:
+            #self.THRESHOLD = None
+            audio = mic.recordAudio(THRESHOLD=None, RATE=48000, CHUNK=8192, LISTEN_TIME=30, RECORD_TIME=6, AVERAGE_TIME=3)
+            if audio:
+              self.speaker.play("../static/audio/beep_hi.mp3")
+              t1 = get_time()
+              transcribed = self.active_stt_engine.transcribe(f)
+              t2 = get_time()
+              runtime = get_runtime(t1, t2)
+              #print "%s # Transcribed: %s  in %3.1f seconds" % (format_time(t2), transcribed, runtime)
+              os.system('tmux send-keys -t jasper-debug "%s # transcribed: %s in %3.1f seconds\n\r"' % (format_time(t2), transcribed, runtime))
+              #os.system('tmux send-keys -t jasper-debug "transcribed: %s persona: %s pos: %d  \n\n"' % (transcribed.upper(), self.PERSONA.upper(), self.PERSONA.upper().find(transcribed.upper() + " ")) )
+              msg = ""
+              if transcribed:
+                if transcribed.upper() == self.PERSONA.upper():
+                  msg = transcribed
+                elif self.PERSONA.upper() in transcribed.upper() and transcribed.upper().find(self.PERSONA.upper() + " ") == 0:
+                  msg = transcribed[transcribed.find(" ")+1:]
+                if msg:
+                  # send text command to jasper instance running in tmux session named jasper
+                  print "send command to jaser %s" % msg
+                  os.system('tmux send-keys -t jasper-debug "msg: %s\n\r"' % msg)
+                  os.system('tmux send-keys -t jasper "%s\n\r"' % msg)
+                  #cmd = "tmux send-keys -t jasper '%s\n'" % transcribed
+                  #os.system(cmd)
+                  if "KONIEC" in msg.upper():
+                    break
+                else:
+                  # false activation or speach not recognised
+                  self.speaker.play("../static/audio/beep_hi.mp3")
+                
+          except KeyboardInterrupt:
+            print 'got break'
+            break
 
 
 
@@ -616,27 +761,35 @@ if __name__ == "__main__":
       f = sys.argv[1]
     
     
-    #snd_dev = "plughw:1,0"
-    mic = Mic(spk, activeSTT, activeSTT, logger, snd_dev=profile['snd_dev'], input_device_index=profile['input_device_index'])
+    mic = Mic(spk, activeSTT, activeSTT, logger, profile)
     #f = 'samples/wlacz_dekoder_ncplusAt1003_4m_RodeM3_SBLive.wav'
     #f = 'samples/wlacz_dekoder_ncplusAt1003_1m_RodeM3_SBLive.wav'
-    mic.find_input_device()
+    #mic.find_input_device()
     #print f
     #raw_input("<pause>")
     #t = mic.fetchThreshold(               RATE=48000, CHUNK=8192, THRESHOLD_TIME=60, AVERAGE_TIME=3)
-    #mic.find_input_device()
-    #f = mic.recordAudio( THRESHOLD=120.0, RATE=48000, CHUNK=8192, LISTEN_TIME=8,    AVERAGE_TIME=None)
-    mic.loadAudio(f, THRESHOLD=120.0, RATE=48000, CHUNK=8192, LISTEN_TIME=8,    AVERAGE_TIME=None)
+    mic.find_input_device()
+    #f = mic.recordAudio(THRESHOLD=None, RATE=48000, CHUNK=8192, LISTEN_TIME=20, RECORD_TIME=6, AVERAGE_TIME=3)
+    f = mic.continousListen()
+    #mic.loadAudio(f, THRESHOLD=120.0, RATE=48000, CHUNK=8192, LISTEN_TIME=8,    AVERAGE_TIME=None)
     #f = mic.activeListen(THRESHOLD=None, RATE=48000, CHUNK=8192, LISTEN_TIME=5,    AVERAGE_TIME=3)
     #print f
     #mic.speaker.play(f)
-    transcribed = activeSTT.transcribe(f)
-    print transcribed
+    
+    
+    #if f:
+    #  t1 = get_time()
+    #  transcribed = activeSTT.transcribe(f)
+    #  t2 = get_time()
+    #  runtime = get_runtime(t1, t2)
+    #  print "%s # Transcribed: %s  in %3.1f seconds" % (format_time(t2), transcribed, runtime)
+    
     #cmd = "tmux send-keys -t jasper '%s\n'" % transcribed
     #os.system(cmd)
 
-    bar = DrawVolumeBar()
-    elements = bar.get_sample_data()
-    pitch = 150.0
-    header = '[ Pitch: %d ]' % pitch
+    #bar = DrawVolumeBar()
+    #elements = bar.get_sample_data()
+    #pitch = 150.0
+    #header = '[ Pitch: %d ]' % pitch
     #bar.draw_bar(elements, header, pitch, 5.85, cut_off=200.0, split=5)
+    del mic

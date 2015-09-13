@@ -18,7 +18,7 @@ class Mic:
     speechRec = None
     speechRec_persona = None
 
-    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger, snd_dev, input_device_index=0):
+    def __init__(self, speaker, passive_stt_engine, active_stt_engine, logger, profile):
         """
         Initiates the pocketsphinx instance.
 
@@ -27,10 +27,15 @@ class Mic:
         passive_stt_engine -- performs STT while Jasper is in passive listen mode
         acive_stt_engine -- performs STT while Jasper is in active listen mode
         """
-        self.speaker = speaker
+        if not profile:
+          print "WARNING: got empty profile - using default values"
+          profile = {}
+        self.profile            = profile
+        self.speaker            = speaker
         self.passive_stt_engine = passive_stt_engine
-        self.active_stt_engine = active_stt_engine
-        self.logger = logger
+        self.active_stt_engine  = active_stt_engine
+        self.logger             = logger
+        self.PERSONA            = self.profile.get('persona', 'Jasper')
 
     def readChunk(self, stream, chunk):
         try:
@@ -89,7 +94,7 @@ class Mic:
 
         return THRESHOLD
 
-    def passiveListen(self, PERSONA):
+    def passiveListen(self):
         """
         Listens for PERSONA in everyday sound. Times out after LISTEN_TIME, so needs to be
         restarted.
@@ -185,8 +190,8 @@ class Mic:
         # check if PERSONA was said
         transcribed = self.passive_stt_engine.transcribe(AUDIO_FILE, PERSONA_ONLY=True)
 
-        if PERSONA in transcribed:
-            return (THRESHOLD, PERSONA)
+        if self.PERSONA in transcribed:
+            return (THRESHOLD, self.PERSONA)
 
         return (False, transcribed)
 

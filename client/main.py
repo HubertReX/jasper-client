@@ -16,6 +16,8 @@ parser.add_argument('--local', '-l', action='store_true',
                     help="use local mic (input from keyboard); useful for debug")
 parser.add_argument('--half-local', '-hl', action='store_true',
                     help="use keyboard for passive and mic for active listen")
+parser.add_argument('--dynamic', '-d', action='store_true',
+                    help="dynamic mic uses adaptive threshold with full recognition in passive mode")
 parser.add_argument('--pipe', '-p', action='store_true',
                     help="use mic as named pipe (input from www server)")
 parser.add_argument('--sock', '-s', action='store_true',
@@ -36,6 +38,8 @@ elif args.pipe:
     from pipe_mic import Mic
 elif args.half_local:
     from half_local_mic import Mic
+elif args.dynamic:
+    from dynamic_mic import Mic
 elif args.sock:
     from socket_select_mic import Mic
 else:
@@ -90,17 +94,17 @@ if __name__ == "__main__":
       else:
         spk = speaker.newSpeaker(log, profile)
       
-      if not args.pipe and not args.sock and not args.local and not args.half_local:
+      if not args.pipe and not args.sock and not args.local and not args.half_local and not args.dynamic:
         passiveSTT = stt.PocketSphinxSTT(logger=log)
         activeSTT  = stt.newSTTEngine(stt_engine_type, logger=log, api_key=api_key)
-      elif args.half_local:
+      elif args.half_local or args.dynamic:
         passiveSTT = None
         activeSTT  = stt.newSTTEngine(stt_engine_type, logger=log, api_key=api_key)
       else:
         passiveSTT = None
         activeSTT  = None
 
-      mic = Mic(spk, passiveSTT, activeSTT, log, profile['snd_dev'], input_device_index=profile['input_device_index'])      
+      mic = Mic(spk, passiveSTT, activeSTT, log, profile=profile)      
     except:
         log.critical( "fatal error creating mic", exc_info=True)
         exit(1)
@@ -110,6 +114,6 @@ if __name__ == "__main__":
         addendum = ", %s" % profile["first_name"]
     mic.say("Czym mogę służyć%s?" % addendum)
 
-    conversation = Conversation("ON", mic, profile, log)
+    conversation = Conversation(mic, profile, log)
 
     conversation.handleForever()

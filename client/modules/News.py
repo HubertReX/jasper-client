@@ -129,7 +129,7 @@ def handle(text, mic, profile, logger, modules):
     if 'phone_number' in profile:
         mic.say("Oto najważniejsze wiadomości.| " + all_titles.encode('utf-8') +
                 ".| Czy mam wysłać Ci wiadomości? Którąś konkretnie?")
-        handleResponse(mic.activeListen(1))
+        handleResponse(mic.activeListen())
 
     else:
         mic.say(

@@ -29,7 +29,7 @@ class GoogleSpeaker:
     def __init__(self, logger, profile):
         self.logger = logger
         self.profile = profile
-        self.snd_dev = profile['snd_dev']
+        self.snd_dev = profile['output_device_name']
         PHRASES_CACHE_DB    = 'cache_phrases_google.db'
         self.cache = persistent_cache.audioCache(PHRASES_CACHE_DB, logger, 'google', self.snd_dev)
         #self.cache.listCacheEntries()
@@ -129,7 +129,7 @@ class IvonaSpeaker:
     def __init__(self, logger, profile):
         self.logger = logger
         self.profile = profile
-        self.snd_dev = profile['snd_dev']
+        self.snd_dev = profile['output_device_name']
         PHRASES_CACHE_DB    = 'cache_phrases_%s.db' % profile['ivona-tts']['voice']
         self.cache = persistent_cache.audioCache(PHRASES_CACHE_DB, logger, profile['ivona-tts']['voice'], self.snd_dev)
         #self.cache.listCacheEntries()
@@ -259,7 +259,7 @@ class eSpeakSpeaker:
     def __init__(self, logger, profile):
         self.logger = logger
         self.profile = profile
-        self.snd_dev = profile['snd_dev']
+        self.snd_dev = profile['output_device_name']
 
     @classmethod
     def isAvailable(cls):

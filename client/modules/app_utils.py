@@ -4,23 +4,68 @@ from email.MIMEText import MIMEText
 import urllib2
 import re
 import requests
+import datetime
 from pytz import timezone
 import str_formater
 
+def get_time(profile):
+    tz = getTimezone(profile)
+    return datetime.datetime.now(tz=tz)
+
+def get_runtime(t1, t2):
+    return (t2 - t1).total_seconds()
+
+def format_datetime(t):
+    return t.strftime("%Y-%m-%d %H:%M:%S")
+
+def format_time(t):
+    return t.strftime("%H:%M:%S")
+
+def format_hour(t):
+    return t.strftime("%H:%M")
+
+def matchWord(word, phrase):
+    return bool(re.search(r'\b(' + word + r')\b', phrase, re.I))
+
+def matchAnyWord(words, phrase):
+    if not isinstance(words, list):
+      words = [words]
+    return matchWord('|'.join(words), phrase)
 
 def textToSMS(text):
     
     res = []
 
     for letter in text:
-      if letter in ['a', 'ą']:
+      if letter in ['a']:
         res.append(2)
         res.append('')
       if letter in ['b']:
         res.append(2)
         res.append(2)
         res.append('')
-      if letter in ['c', 'ć']:
+      if letter in ['c']:
+        res.append(2)
+        res.append(2)
+        res.append(2)
+        res.append('')
+      if letter in ['ą']:
+        res.append(2)
+        res.append(2)
+        res.append(2)
+        res.append(2)
+        res.append('')
+      if letter in ['ć']:
+        res.append(2)
+        res.append(2)
+        res.append(2)
+        res.append(2)
+        res.append(2)
+        res.append('')
+      if letter in ['2']:
+        res.append(2)
+        res.append(2)
+        res.append(2)
         res.append(2)
         res.append(2)
         res.append(2)
@@ -28,11 +73,24 @@ def textToSMS(text):
       if letter in ['d']:
         res.append(3)
         res.append('')
-      if letter in ['e', 'ę']:
+      if letter in ['e']:
         res.append(3)
         res.append(3)
         res.append('')
       if letter in ['f']:
+        res.append(3)
+        res.append(3)
+        res.append(3)
+        res.append('')
+      if letter in ['ę']:
+        res.append(3)
+        res.append(3)
+        res.append(3)
+        res.append(3)
+        res.append('')
+      if letter in ['3']:
+        res.append(3)
+        res.append(3)
         res.append(3)
         res.append(3)
         res.append(3)
@@ -48,6 +106,12 @@ def textToSMS(text):
         res.append(4)
         res.append(4)
         res.append('')
+      if letter in ['4']:
+        res.append(4)
+        res.append(4)
+        res.append(4)
+        res.append(4)
+        res.append('')
       if letter in ['j']:
         res.append(5)
         res.append('')
@@ -55,7 +119,20 @@ def textToSMS(text):
         res.append(5)
         res.append(5)
         res.append('')
-      if letter in ['l', 'ł']:
+      if letter in ['l']:
+        res.append(5)
+        res.append(5)
+        res.append(5)
+        res.append('')
+      if letter in ['ł']:
+        res.append(5)
+        res.append(5)
+        res.append(5)
+        res.append(5)
+        res.append('')
+      if letter in ['5']:
+        res.append(5)
+        res.append(5)
         res.append(5)
         res.append(5)
         res.append(5)
@@ -63,11 +140,32 @@ def textToSMS(text):
       if letter in ['m']:
         res.append(6)
         res.append('')
-      if letter in ['n', 'ń']:
+      if letter in ['n']:
         res.append(6)
         res.append(6)
         res.append('')
-      if letter in ['o', 'ó']:
+      if letter in ['o']:
+        res.append(6)
+        res.append(6)
+        res.append(6)
+        res.append('')
+      if letter in ['ń']:
+        res.append(6)
+        res.append(6)
+        res.append(6)
+        res.append(6)
+        res.append('')
+      if letter in ['ó']:
+        res.append(6)
+        res.append(6)
+        res.append(6)
+        res.append(6)
+        res.append(6)
+        res.append('')
+      if letter in ['6']:
+        res.append(6)
+        res.append(6)
+        res.append(6)
         res.append(6)
         res.append(6)
         res.append(6)
@@ -84,7 +182,22 @@ def textToSMS(text):
         res.append(7)
         res.append(7)
         res.append('')
-      if letter in ['s', 'ś']:
+      if letter in ['s']:
+        res.append(7)
+        res.append(7)
+        res.append(7)
+        res.append(7)
+        res.append('')
+      if letter in ['ś']:
+        res.append(7)
+        res.append(7)
+        res.append(7)
+        res.append(7)
+        res.append(7)
+        res.append('')
+      if letter in ['7']:
+        res.append(7)
+        res.append(7)
         res.append(7)
         res.append(7)
         res.append(7)
@@ -102,6 +215,12 @@ def textToSMS(text):
         res.append(8)
         res.append(8)
         res.append('')
+      if letter in ['8']:
+        res.append(8)
+        res.append(8)
+        res.append(8)
+        res.append(8)
+        res.append('')
       if letter in ['w']:
         res.append(9)
         res.append('')
@@ -114,7 +233,31 @@ def textToSMS(text):
         res.append(9)
         res.append(9)
         res.append('')
-      if letter in ['z', 'ź', 'ż']:
+      if letter in ['z']:
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append('')
+      if letter in ['ż']:
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append('')
+      if letter in ['ź']:
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append(9)
+        res.append('')
+      if letter in ['9']:
+        res.append(9)
+        res.append(9)
+        res.append(9)
         res.append(9)
         res.append(9)
         res.append(9)
@@ -123,10 +266,10 @@ def textToSMS(text):
       if letter in [' ']:
         res.append(0)
         res.append('')
-      if letter in ['.']:
+      if letter in ['1']:
         res.append(1)
         res.append('')
-      if letter in [',']:
+      if letter in ['.']:
         res.append(1)
         res.append(1)
         res.append('')
@@ -173,10 +316,12 @@ def getNumbers(text):
     return res
 
 def upperUTF8(text):
-    return text.upper().replace('ą','Ą').replace('ę','Ę').replace('ć','Ć').replace('ł','Ł').replace('ń','Ń').replace('ó','Ó').replace('ź','Ź').replace('ż','Ż')
+    return text.decode('utf-8').upper().encode("utf-8")
+    #return text.upper().replace('ą','Ą').replace('ę','Ę').replace('ć','Ć').replace('ł','Ł').replace('ń','Ń').replace('ó','Ó').replace('ź','Ź').replace('ż','Ż')
 
 def lowerUTF8(text):
-    return text.lower().replace('Ą','ą').replace('Ę','ę').replace('Ć','ć').replace('Ł','ł').replace('Ń','ń').replace('Ó','ó').replace('Ź','ź').replace('Ż','ż')
+    return text.decode('utf-8').lower().encode("utf-8")
+    #return text.lower().replace('Ą','ą').replace('Ę','ę').replace('Ć','ć').replace('Ł','ł').replace('Ń','ń').replace('Ó','ó').replace('Ź','ź').replace('Ż','ż')
 
 def sendEmail(SUBJECT, BODY, TO, FROM, SENDER, PASSWORD, SMTP_SERVER, logger):
     """Sends an HTML email."""

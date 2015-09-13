@@ -17,15 +17,15 @@ def handle(text, mic, profile, logger, modules):
         profile -- contains information related to the user (e.g., phone number)
     """
 
-    messages = ["Przepraszam, czy mogę prosić o powtórzenie?",
-                "Jeszcze raz proszę.",
-                "Proszę powtórzyć.", 
-                "Nierozumiem"]
+    messages = ["Czy mogę prosić o powtórzenie?",
+                "Powtórz proszę", 
+                "Powiedz jeszcze raz",
+                ]
 
     message = random.choice(messages)
-
+    mic.say("Nie rozumiem polecenia |%s" % text)
     mic.say(message)
-
+ 
 
 def isValid(text):
     return True
